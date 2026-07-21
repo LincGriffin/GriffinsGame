@@ -1,8 +1,8 @@
 extends CanvasLayer
-## Autoloaded debug HUD, toggled with F3 (the `toggle_debug` action). Shows FPS,
-## player stats, whether a battle is active, and the player's grid cell + the tile
-## beneath them. It finds the live nodes via groups ("player", "battle") so it works
-## in any scene without wiring. A couple of test cheats are available while open.
+## Autoloaded debug HUD, toggled with F3 (the `toggle_debug` action). Shows FPS, the
+## run's party (each monster's HP), whether a battle is active, and the player's grid
+## cell + the tile beneath them. It finds the live nodes via groups ("player",
+## "battle") so it works in any scene. A couple of test cheats are available while open.
 
 @onready var _label: Label = $Label
 
@@ -31,20 +31,26 @@ func _input(event: InputEvent) -> void:
 			var p := _player()
 			if p != null:
 				p.hold_to_move = not p.hold_to_move
-		KEY_K:                       # set HP to 1 (test near-death / game over)
-			var gs := _game_state()
-			if gs != null:
-				gs.set_hp(1)
+		KEY_K:                       # set the whole party to 1 HP (test wipe / game over)
+			var rs := _run_state()
+			if rs != null:
+				for c in rs.party:
+					c.hp = 1
 
 
 func _build_text() -> String:
 	var lines := PackedStringArray()
 	lines.append("FPS %d" % Engine.get_frames_per_second())
 
-	var gs := _game_state()
-	if gs != null:
-		lines.append("HP %d/%d   Lv.%d   XP %d/%d" % [
-			gs.hp, gs.max_hp, gs.level, gs.xp, gs.xp_to_next()])
+	var rs := _run_state()
+	if rs != null:
+		if rs.party.is_empty():
+			lines.append("party: (none yet)")
+		else:
+			var parts := PackedStringArray()
+			for c in rs.party:
+				parts.append("%s %d/%d" % [c.display_name, c.hp, c.max_hp])
+			lines.append("party %d/%d: %s" % [rs.party.size(), rs.PARTY_CAP, ", ".join(parts)])
 
 	var in_battle := get_tree().get_first_node_in_group("battle") != null
 	lines.append("state: %s" % ("BATTLE" if in_battle else "overworld"))
@@ -60,7 +66,7 @@ func _build_text() -> String:
 					td.get_custom_data("monster"),
 					td.get_custom_data("boss")])
 
-	lines.append("[F3] hide   [H] hold-move   [K] HP=1")
+	lines.append("[F3] hide   [H] hold-move   [K] party HP=1")
 	return "\n".join(lines)
 
 
@@ -68,5 +74,5 @@ func _player() -> Node:
 	return get_tree().get_first_node_in_group("player")
 
 
-func _game_state() -> Node:
-	return get_node_or_null("/root/GameState")
+func _run_state() -> Node:
+	return get_node_or_null("/root/RunState")

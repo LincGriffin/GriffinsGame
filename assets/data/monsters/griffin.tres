@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="1_ocod3"]
+
+[resource]
+script = ExtResource("1_ocod3")
+id = "griffin"
+display_name = "The Griffin"
+max_hp = 60
+attack = 12
+defense = 6
+speed = 7
+is_boss = true
+tint = Color(0.88, 0.71, 0.27, 1)

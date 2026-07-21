@@ -1,5 +1,5 @@
 extends "res://tools/tests/_base.gd"
-## Battle math + progression + content, as pure unit tests (no scene, no autoload).
+## Battle math + party/run-state + content, as pure unit tests (no scene, no autoload).
 
 func test_damage_attack_minus_half_defense() -> void:
 	var a := Combatant.make("A", 20, 10, 0, 5)
@@ -28,43 +28,77 @@ func test_take_damage_clamps_to_zero() -> void:
 	eq(dealt, 10, "returns damage actually dealt")
 
 
-func test_from_enemy_copies_stats() -> void:
-	var griffin: EnemyData = load("res://assets/data/enemies/griffin.tres")
+func test_from_monster_copies_stats() -> void:
+	var griffin: MonsterData = load("res://assets/data/monsters/griffin.tres")
 	check(griffin != null, "griffin.tres loads")
 	check(griffin.is_boss, "griffin is flagged as the boss")
-	var c := Combatant.from_enemy(griffin)
+	var c := Combatant.from_monster(griffin)
 	eq(c.max_hp, griffin.max_hp, "combatant max_hp comes from data")
 	eq(c.hp, griffin.max_hp, "combatant starts at full hp")
 	check(c.is_boss, "combatant carries the boss flag")
+	eq(c.source, griffin, "combatant remembers its source data")
 
 
-func test_full_enemy_roster_present() -> void:
+func test_full_monster_roster_present() -> void:
 	for id in ["slime", "bat", "skeleton", "griffin"]:
-		var e = load("res://assets/data/enemies/%s.tres" % id)
-		check(e != null and e.id == id, "%s.tres exists with matching id" % id)
+		var m = load("res://assets/data/monsters/%s.tres" % id)
+		check(m != null and m.id == id, "%s.tres exists with matching id" % id)
 
 
-func test_gamestate_defaults() -> void:
-	var gs = load("res://autoload/game_state.gd").new()
-	eq(gs.level, 1, "starts at level 1")
-	eq(gs.hp, 30, "starts with 30 hp")
-	eq(gs.xp_to_next(), 10, "xp_to_next = level * 10")
-	gs.free()
+func test_starter_flags() -> void:
+	for id in ["slime", "bat", "skeleton"]:
+		var m = load("res://assets/data/monsters/%s.tres" % id)
+		check(m.is_starter, "%s is a starter" % id)
+	var griffin = load("res://assets/data/monsters/griffin.tres")
+	check(not griffin.is_starter, "the boss is not a starter")
 
 
-func test_gamestate_xp_below_threshold() -> void:
-	var gs = load("res://autoload/game_state.gd").new()
-	eq(gs.add_xp(5), 0, "no level gained from 5 xp")
-	eq(gs.xp, 5, "xp accumulates")
-	eq(gs.level, 1, "still level 1")
-	gs.free()
+# --- RunState: party / run lifecycle ---
+
+func _new_run_state() -> Node:
+	return load("res://autoload/run_state.gd").new()
 
 
-func test_gamestate_level_up() -> void:
-	var gs = load("res://autoload/game_state.gd").new()
-	var base_attack: int = gs.attack
-	eq(gs.add_xp(10), 1, "one level gained at the threshold")
-	eq(gs.level, 2, "advanced to level 2")
-	check(gs.attack > base_attack, "attack grew on level up")
-	eq(gs.hp, gs.max_hp, "full heal on level up")
-	gs.free()
+func _slime() -> MonsterData:
+	return load("res://assets/data/monsters/slime.tres")
+
+
+func test_new_run_seeds_party_with_starter() -> void:
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	eq(rs.party.size(), 1, "party seeded with the starter")
+	eq(rs.party[0].hp, rs.party[0].max_hp, "starter enters at full hp")
+	check(rs.has_living(), "a fresh run has a living party")
+	rs.free()
+
+
+func test_add_monster_respects_cap() -> void:
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	while not rs.is_full():
+		check(rs.add_monster(_slime()), "add under cap succeeds")
+	eq(rs.party.size(), rs.PARTY_CAP, "party filled to the cap")
+	check(not rs.add_monster(_slime()), "add at cap is rejected")
+	eq(rs.party.size(), rs.PARTY_CAP, "cap not exceeded")
+	rs.free()
+
+
+func test_prune_dead_removes_fallen() -> void:
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	rs.add_monster(_slime())
+	rs.party[0].hp = 0            # knock one out
+	rs.prune_dead()
+	eq(rs.party.size(), 1, "the fallen monster is pruned")
+	check(rs.has_living(), "the survivor remains")
+	rs.free()
+
+
+func test_party_wipe_detected() -> void:
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	rs.party[0].hp = 0
+	check(not rs.has_living(), "no living monster after a wipe")
+	rs.prune_dead()
+	check(rs.party.is_empty(), "wiped party is empty after prune")
+	rs.free()

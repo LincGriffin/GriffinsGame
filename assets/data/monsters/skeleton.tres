@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="1_l65yv"]
+
+[resource]
+script = ExtResource("1_l65yv")
+id = "skeleton"
+display_name = "Skeleton"
+max_hp = 24
+attack = 8
+defense = 4
+speed = 4
+is_starter = true
+tint = Color(0.86, 0.86, 0.82, 1)
