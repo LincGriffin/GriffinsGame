@@ -13,7 +13,7 @@ func _init() -> void:
 	_add_action("toggle_debug", [KEY_F3])
 
 	ProjectSettings.set_setting(
-		"application/run/main_scene", "res://scenes/overworld/overworld.tscn")
+		"application/run/main_scene", "res://scenes/map/run.tscn")
 
 	# Autoload singletons ("*" = enabled). Order matters: RunState first.
 	if ProjectSettings.has_setting("autoload/GameState"):
