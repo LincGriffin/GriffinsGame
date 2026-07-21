@@ -7,6 +7,8 @@ extends SceneTree
 func _init() -> void:
 	_make_player_scene()
 	_make_overworld_scene()
+	_make_battle_scene()
+	_make_debug_overlay_scene()
 	print("gen_scenes: done")
 	quit()
 
@@ -55,8 +57,117 @@ func _make_overworld_scene() -> void:
 	_save(ow, "res://scenes/overworld/overworld.tscn")
 
 
+func _make_battle_scene() -> void:
+	var root := CanvasLayer.new()
+	root.name = "Battle"
+	root.layer = 10                       # draw above the overworld
+	root.set_script(load("res://scripts/battle.gd"))
+
+	var bg := ColorRect.new()
+	bg.name = "Background"
+	bg.color = Color(0.06, 0.07, 0.10, 1.0)
+	_add(root, bg, root)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var panel := MarginContainer.new()
+	panel.name = "Panel"
+	_add(root, panel, root)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		panel.add_theme_constant_override(side, 28)
+
+	var col := VBoxContainer.new()
+	col.name = "Col"
+	col.add_theme_constant_override("separation", 10)
+	_add(panel, col, root)
+
+	var enemy_name := Label.new()
+	enemy_name.name = "EnemyName"
+	enemy_name.text = "Enemy"
+	_add(col, enemy_name, root)
+
+	var enemy_hp := ProgressBar.new()
+	enemy_hp.name = "EnemyHP"
+	enemy_hp.show_percentage = false
+	enemy_hp.custom_minimum_size = Vector2(0, 18)
+	_add(col, enemy_hp, root)
+
+	var enemy_area := CenterContainer.new()
+	enemy_area.name = "EnemyArea"
+	enemy_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_add(col, enemy_area, root)
+
+	var enemy_sprite := ColorRect.new()
+	enemy_sprite.name = "EnemySprite"
+	enemy_sprite.custom_minimum_size = Vector2(120, 120)
+	enemy_sprite.color = Color.WHITE
+	_add(enemy_area, enemy_sprite, root)
+
+	var message := Label.new()
+	message.name = "Message"
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.custom_minimum_size = Vector2(0, 48)
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_add(col, message, root)
+
+	var actions := HBoxContainer.new()
+	actions.name = "Actions"
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("separation", 16)
+	_add(col, actions, root)
+
+	for label in ["Attack", "Defend", "Flee"]:
+		var b := Button.new()
+		b.name = label
+		b.text = label
+		b.custom_minimum_size = Vector2(120, 40)
+		_add(actions, b, root)
+
+	var player_name := Label.new()
+	player_name.name = "PlayerName"
+	player_name.text = "Hero"
+	_add(col, player_name, root)
+
+	var player_hp := ProgressBar.new()
+	player_hp.name = "PlayerHP"
+	player_hp.show_percentage = false
+	player_hp.custom_minimum_size = Vector2(0, 18)
+	_add(col, player_hp, root)
+
+	_save(root, "res://scenes/battle/battle.tscn")
+
+
+func _make_debug_overlay_scene() -> void:
+	var root := CanvasLayer.new()
+	root.name = "DebugOverlay"
+	root.layer = 50                       # above everything, including battles
+	root.set_script(load("res://scripts/debug_overlay.gd"))
+
+	var bg := ColorRect.new()
+	bg.name = "BG"
+	bg.color = Color(0, 0, 0, 0.55)
+	bg.position = Vector2(8, 8)
+	bg.size = Vector2(440, 196)
+	_add(root, bg, root)
+
+	var label := Label.new()
+	label.name = "Label"
+	label.position = Vector2(18, 14)
+	label.add_theme_color_override("font_color", Color(0.85, 1.0, 0.85))
+	label.add_theme_font_size_override("font_size", 14)
+	_add(root, label, root)
+
+	_save(root, "res://scenes/ui/debug_overlay.tscn")
+
+
 func _attach(root: Node, child: Node) -> void:
 	root.add_child(child)
+	child.owner = root
+
+
+## Add `child` under `parent`, but owned by the scene `root` so it serializes.
+func _add(parent: Node, child: Node, root: Node) -> void:
+	parent.add_child(child)
 	child.owner = root
 
 

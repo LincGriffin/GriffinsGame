@@ -14,15 +14,17 @@ func _init() -> void:
 
 
 func _make_tileset() -> void:
-	# 3 tiles in a horizontal strip: [0]=floor  [1]=wall  [2]=monster marker
-	var img := Image.create(TILE * 3, TILE, false, Image.FORMAT_RGBA8)
+	# 4 tiles in a horizontal strip: [0]=floor [1]=wall [2]=monster [3]=boss marker
+	var img := Image.create(TILE * 4, TILE, false, Image.FORMAT_RGBA8)
 
 	var floor_base := Color8(58, 63, 75)      # #3A3F4B
 	var floor_edge := Color8(44, 49, 60)      # #2C313C  (grid line)
 	var wall_base := Color8(86, 92, 102)      # #565C66
 	var wall_hi := Color8(110, 117, 129)      # #6E7581  (top/left bevel)
 	var wall_lo := Color8(58, 62, 69)         # #3A3E45  (bottom/right bevel)
-	var monster := Color8(217, 83, 79)        # #D9534F
+	var monster := Color8(217, 83, 79)        # #D9534F  red
+	var boss := Color8(224, 180, 71)          # #E0B447  gold
+	var boss_ring := Color8(150, 110, 30)     # darker gold ring
 
 	for ty in range(TILE):
 		for tx in range(TILE):
@@ -46,6 +48,13 @@ func _make_tileset() -> void:
 			if dx * dx + dy * dy <= 9.0 * 9.0:
 				mc = monster
 			img.set_pixel(TILE * 2 + tx, ty, mc)
+
+			# Tile 3 — floor with a larger gold boss marker (disc + ring)
+			var bc := floor_edge if on_edge else floor_base
+			var bdist := dx * dx + dy * dy
+			if bdist <= 11.0 * 11.0:
+				bc = boss_ring if bdist > 8.0 * 8.0 else boss
+			img.set_pixel(TILE * 3 + tx, ty, bc)
 
 	var err := img.save_png("res://assets/tilesets/dungeon_tiles.png")
 	assert(err == OK, "failed to save dungeon_tiles.png")

@@ -35,6 +35,10 @@ const DIRECTIONS := {
 }
 
 
+func _ready() -> void:
+	add_to_group("player")   # so the debug overlay can find the player in any scene
+
+
 func _physics_process(_delta: float) -> void:
 	if is_moving:
 		return
