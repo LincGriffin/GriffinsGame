@@ -42,6 +42,11 @@ if [[ "$BRANCH" == "$BASE" ]]; then
 	echo "refusing to open a PR from '$BASE' into itself — create a feature branch first." >&2
 	exit 1
 fi
+if [[ "$BASE" != "main" ]]; then
+	echo "WARNING: base is '$BASE', not 'main' — this is a STACKED PR." >&2
+	echo "         Merging it lands the changes in '$BASE', NOT in main. Prefer basing" >&2
+	echo "         feature branches on origin/main so every PR targets main directly." >&2
+fi
 
 echo "Pushing $BRANCH ..."
 git push -u origin "$BRANCH"

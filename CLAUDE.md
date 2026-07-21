@@ -85,9 +85,9 @@ Quality gates:
   Add a suite when you add a system; add assertions when you add behavior.
 - **`doctor.gd`** — project health check: file-named directories, unset/missing `main_scene`, and any
   `.gd`/`.tscn`/`.tres` that fails to load.
-- **`hooks/pre-push`** — runs doctor + tests before every push. Install once per clone:
-  `git config core.hooksPath tools/hooks`. Bypass with `git push --no-verify`; point at Godot with
-  `GODOT=... git push`.
+- **`hooks/`** — git hooks. `pre-commit` blocks committing directly on `main`; `pre-push` imports then
+  runs doctor + tests. Install once per clone: `git config core.hooksPath tools/hooks`. Bypass with
+  `--no-verify`; point at Godot with `GODOT=... git push`.
 
 PR helper:
 - **`open_pr.sh`** — `tools/open_pr.sh "<title>" <body.md> [base]` opens (or finds) the PR for the
@@ -97,17 +97,28 @@ PR helper:
 
 ## Git / PR workflow
 
-**Open a new PR for every new feature.** Do not commit feature work directly to `main`.
+Solo-dev flow: **every change goes through a feature branch + PR that targets `main`.**
+Do not commit on `main` (a `pre-commit` hook blocks it) — work only ever lands on `main` by merging a PR.
 
-1. Branch from the remote's real history: `git checkout -b feat/<short-name> origin/main`
-   (the local `main` may be an orphan with no commits — always base branches on `origin/main`).
+**NEVER stack branches.** Always branch from `origin/main`, and every PR's base is **`main`** — never
+base a feature branch on another unmerged feature branch. Stacking silently breaks merges: merging a
+stacked PR lands its changes in the *intermediate* branch, not `main` (this bit us once — three PRs all
+showed "merged" but only the bottom one reached `main`). If feature B needs feature A that isn't merged
+yet, **merge A's PR into `main` first**, then branch B from the updated `origin/main`. `open_pr.sh` warns
+when the base isn't `main`.
+
+**One feature at a time:**
+
+1. Sync main, then branch: `git checkout main && git pull` then `git checkout -b feat/<short-name> origin/main`.
 2. Keep PRs **additive**; don't clobber `.gitignore` or delete unrelated files. The repo `.gitignore`
    already ignores `.godot/` — never commit that cache. Commit Godot's `*.import` and `*.uid` sidecars.
 3. Commit with a descriptive message. End the message with:
    `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
-4. `git push -u origin feat/<short-name>`
-5. Open the PR (see recipe below). End the PR body with:
+4. `git push -u origin feat/<short-name>` (the `pre-push` hook runs doctor + tests).
+5. Open the PR with `open_pr.sh` (base defaults to `main`). End the PR body with:
    `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+6. **Merge it into `main`, then go back to step 1** for the next feature (sync main first, so the next
+   branch includes what you just merged).
 
 ### Creating the PR — escaping recipe (IMPORTANT, avoids body mangling)
 
@@ -167,5 +178,6 @@ step failed — check you used the **script file**, not an inline one-liner.
 
 - A GDScript file cannot share a path with a folder. If a `scripts/<name>.gd` **directory** exists
   (an accidental `mkdir`), remove the empty dir before creating the real file.
-- The local `main` branch is currently an orphan (no commits, no upstream). After the first PR merges,
-  reconnect it: `git checkout main && git branch --set-upstream-to=origin/main main && git pull`.
+- If the local `main` is still the initial orphan (no upstream), reconnect it once:
+  `git checkout main && git branch --set-upstream-to=origin/main main && git pull`. Thereafter just
+  `git checkout main && git pull` after each merge before branching the next feature.
