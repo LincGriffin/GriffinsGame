@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Pre-push guard: run the project doctor and the headless test suite before any
+# push is allowed. Blocks the push (exit 1) if either fails.
+#
+# Install once per clone:   git config core.hooksPath tools/hooks
+# Bypass in a pinch:        git push --no-verify
+# Override the Godot path:  GODOT="/path/to/Godot_console.exe" git push
+#
+# If Godot can't be found, this WARNS and allows the push (so a machine without
+# Godot isn't wedged) — it only blocks on actual doctor/test failures.
+
+set -uo pipefail
+
+REPO="$(git rev-parse --show-toplevel)"
+
+# Locate the Godot binary: $GODOT, then PATH, then the known local install.
+GODOT_BIN="${GODOT:-}"
+if [[ -z "$GODOT_BIN" ]]; then
+	if command -v godot >/dev/null 2>&1; then
+		GODOT_BIN="$(command -v godot)"
+	else
+		GODOT_BIN="/c/Users/Dad/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+	fi
+fi
+if [[ ! -x "$GODOT_BIN" && ! -f "$GODOT_BIN" ]]; then
+	echo "pre-push: WARNING — Godot not found ('$GODOT_BIN'); skipping checks." >&2
+	echo "pre-push: set GODOT=... to enable, or 'git config core.hooksPath tools/hooks'." >&2
+	exit 0
+fi
+
+run_check() {
+	local label="$1" script="$2"
+	local out
+	echo "pre-push: $label ..."
+	out="$("$GODOT_BIN" --headless --path "$REPO" --script "$script" 2>&1)"
+	local code=$?
+	if [[ $code -ne 0 ]]; then
+		echo "$out" | grep -vE '^\[|loading_editor_layout|reimport|leaked|RID|ObjectDB|still in use|_free_rids|^   at: ' >&2
+		echo "pre-push: $label FAILED (exit $code) — push blocked. Use --no-verify to override." >&2
+		return 1
+	fi
+	# Show the one-line result summary if present.
+	echo "$out" | grep -E 'RESULT:|doctor:' | tail -1
+	return 0
+}
+
+# Import first so the asset + global-class-name caches exist (they live in the
+# gitignored .godot/, so a fresh clone has none — the test suite needs them).
+echo "pre-push: importing assets ..."
+"$GODOT_BIN" --headless --path "$REPO" --import >/dev/null 2>&1
+
+run_check "doctor"     "res://tools/doctor.gd"     || exit 1
+run_check "test suite" "res://tools/run_tests.gd"  || exit 1
+
+echo "pre-push: all checks passed."
+exit 0

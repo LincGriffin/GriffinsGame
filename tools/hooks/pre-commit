@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Refuse commits made directly on the default branch. Solo-dev policy: every change
+# goes through a feature branch + PR, so work never accumulates on 'main' outside a
+# reviewable PR. Installed via `git config core.hooksPath tools/hooks`.
+# Bypass in a genuine pinch with: git commit --no-verify
+
+branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+
+if [ "$branch" = "main" ]; then
+	echo "pre-commit: refusing to commit directly on 'main'." >&2
+	echo "  Every change goes through a feature branch + PR. Start one from the latest main:" >&2
+	echo "    git checkout main && git pull" >&2
+	echo "    git checkout -b feat/<name> origin/main" >&2
+	echo "  (bypass once, rarely: git commit --no-verify)" >&2
+	exit 1
+fi
+exit 0

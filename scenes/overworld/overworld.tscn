@@ -5,11 +5,11 @@
 [ext_resource type="PackedScene" path="res://scenes/overworld/player.tscn" id="3_b1b42"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="4_0wbp6"]
 
-[node name="Overworld" type="Node2D" unique_id=689224538]
+[node name="Overworld" type="Node2D" unique_id=103592653]
 script = ExtResource("1_662u0")
 
-[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=928692833]
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=2124592650]
 tile_set = ExtResource("2_dhsp4")
 
-[node name="Player" type="CharacterBody2D" parent="." unique_id=2004810644 instance=ExtResource("3_b1b42")]
+[node name="Player" type="CharacterBody2D" parent="." unique_id=1763703144 instance=ExtResource("3_b1b42")]
 script = ExtResource("4_0wbp6")
