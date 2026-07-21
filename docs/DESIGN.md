@@ -69,10 +69,27 @@ turn state machine gains a *choose-lead* step and a *switch-on-death* transition
 - **Run start:** you pick **one of three** weaker starter monsters, drawn from the common wild pool.
 - **Auto-recruit on victory:** beating a wild (non-boss) monster adds it to your party. The
   defeated enemy *literally becomes* a party member — the same data type describes both.
-- **Collection cap:** 6 (*default, tunable*). When full, prompt to replace a member or skip.
+- **Collection cap:** 5 (*default, tunable*). When full, replace a member or skip — and, in a
+  later phase, **merge** two monsters into one (see below).
 - **Monsters are fixed-stat** — they have their own HP and moves but **do not level up**. You grow
   stronger by collecting better monsters and grabbing power-ups, not by grinding.
 - **No XP, no levels.** Today's `GameState` XP/level system is retired.
+
+### Monster merging (later phase)
+
+With fixed-stat monsters and no XP, **merging** is the second collection-driven power lever (after
+finding better monsters). When your party is **at the cap**, instead of only replace-or-skip you can
+**merge two monsters into one** — freeing a slot and producing a monster with a **small bump to its
+total stats** and a **new set of moves**. It rewards *filling* the roster rather than hoarding
+duplicates, and stays consistent with "power comes from collection."
+
+*Deferred to Phase 6 (`feat/monster-merge`); needs the party/cap system (Phase 1) and moves
+(Phase 3).* Sub-questions to lock when built:
+
+- How many combine (default **2 → 1**), and what sets the result's identity / name / appearance?
+- Stat bump: flat vs percentage, and **capped** so it stays "small" (not the additive sum of both).
+- New moves: **randomly rolled**, **blended** from the parents, or from a **fixed fusion table**?
+- Available only at the cap, or anytime (e.g., a dedicated Merge/Rest node)?
 
 ## Moves (combat depth — a later phase)
 
@@ -156,6 +173,7 @@ skeleton with placeholder fights first — flagged.)*
 | **3** | `feat/moves` | `MoveData` + `gen_moves`, per-monster **movesets**, richer command menu; power-up nodes can now grant **new moves**. | 1 (2 for move-granting nodes) |
 | **4** | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
 | **5** | `feat/content-balance` | Roster/moveset expansion, node-distribution and power-up-pool tuning, teleport behavior, added tests, balance. | 2, 3 |
+| **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
 
 ## Verification (per phase)
 
@@ -176,7 +194,7 @@ skeleton with placeholder fights first — flagged.)*
    or **3 randomly drawn** from the common wild pool each run?
 2. **On-map avatar:** with no Hero, what represents you in walkable (hybrid) rooms — your **lead
    monster** (*default*), or a neutral party token?
-3. **Collection cap** = 6 (*default*); when full, prompt replace-or-skip.
+3. **Collection cap** = 5 (*default*); when full, replace / skip / (later phase) merge.
 4. **Moves:** unlimited use (no PP) *default*; the Strike / Heavy / Guard / Heal taxonomy is a
    starting point.
 5. **Node roster:** include **Elite** and **Treasure/Rest** nodes, or trim to
