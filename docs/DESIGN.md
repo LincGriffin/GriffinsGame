@@ -174,6 +174,25 @@ skeleton with placeholder fights first — flagged.)*
 | **4** | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
 | **5** | `feat/content-balance` | Roster/moveset expansion, node-distribution and power-up-pool tuning, teleport behavior, added tests, balance. | 2, 3 |
 | **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
+| **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
+
+## Content tooling (later)
+
+Monsters and enemies are the **same `MonsterData`** resources, currently defined in the `ROSTER`
+table in `tools/gen_content.gd` (edit code, re-run the generator). As the roster grows, add a
+**monster/enemy editor tool** so content can be added, deleted, and modified without hand-editing
+code. Candidate approaches (pick when it's worth building):
+
+- **Data-file roster** — move `ROSTER` to an editable `assets/data/monsters.json` (or CSV) that
+  `gen_content.gd` reads; editing content becomes pure data, no code.
+- **In-editor tool** — a small Godot `@tool` scene / `EditorPlugin` that lists the `MonsterData`
+  `.tres` and creates / duplicates / edits / deletes them via the inspector.
+- **Headless CLI** — `tools/edit_monster.gd add|remove|set <id> <field=value>…` for scripted edits,
+  matching the existing headless-generator pattern.
+
+Whatever the form, it should cover all `MonsterData` fields (stats, `is_boss`, `is_starter`, `tint`,
+and later `moves`), keep `id`s unique, and re-run the needed generators + `--import`. Independent of
+the gameplay phases — build it whenever hand-editing `gen_content.gd` becomes painful.
 
 ## Verification (per phase)
 
