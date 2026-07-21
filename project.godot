@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-GameState="*res://autoload/game_state.gd"
+RunState="*res://autoload/run_state.gd"
 DebugOverlay="*res://scenes/ui/debug_overlay.tscn"
 
 [display]

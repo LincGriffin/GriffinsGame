@@ -15,8 +15,10 @@ func _init() -> void:
 	ProjectSettings.set_setting(
 		"application/run/main_scene", "res://scenes/overworld/overworld.tscn")
 
-	# Autoload singletons ("*" = enabled). Order matters: GameState first.
-	ProjectSettings.set_setting("autoload/GameState", "*res://autoload/game_state.gd")
+	# Autoload singletons ("*" = enabled). Order matters: RunState first.
+	if ProjectSettings.has_setting("autoload/GameState"):
+		ProjectSettings.clear("autoload/GameState")   # migrated: GameState -> RunState
+	ProjectSettings.set_setting("autoload/RunState", "*res://autoload/run_state.gd")
 	ProjectSettings.set_setting("autoload/DebugOverlay", "*res://scenes/ui/debug_overlay.tscn")
 
 	var err := ProjectSettings.save()

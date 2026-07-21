@@ -1,9 +1,9 @@
 extends Node2D
 ## The dungeon room. Paints the TileMapLayer from an ASCII map, spawns the player,
 ## and — when the player steps onto a monster or boss tile — launches a Battle as a
-## full-screen overlay. When the battle finishes it applies the outcome: award XP
-## and clear the tile on a win, show YOU WIN on the boss, GAME OVER on a loss, or
-## nothing on a successful flee.
+## full-screen overlay. At run start the player first picks a starter monster. On a
+## wild win the defeated monster is recruited into the party; a boss win WINS the run;
+## a party wipe is GAME OVER (press R for a fresh run).
 
 signal battle_triggered(cell: Vector2i)
 
@@ -14,12 +14,14 @@ const MONSTER := Vector2i(2, 0)
 const BOSS := Vector2i(3, 0)
 
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
-const REGULAR_ENEMIES: Array[EnemyData] = [
-	preload("res://assets/data/enemies/slime.tres"),
-	preload("res://assets/data/enemies/bat.tres"),
-	preload("res://assets/data/enemies/skeleton.tres"),
+const STARTER_SELECT := preload("res://scripts/starter_select.gd")
+
+const REGULAR_ENEMIES: Array[MonsterData] = [
+	preload("res://assets/data/monsters/slime.tres"),
+	preload("res://assets/data/monsters/bat.tres"),
+	preload("res://assets/data/monsters/skeleton.tres"),
 ]
-const BOSS_ENEMY: EnemyData = preload("res://assets/data/enemies/griffin.tres")
+const BOSS_ENEMY: MonsterData = preload("res://assets/data/monsters/griffin.tres")
 
 # Legend:  '#' wall  '.' floor  'M' monster  'B' boss  'P' player start (a floor)
 const ROOM := [
@@ -39,7 +41,7 @@ const ROOM := [
 
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
 @onready var player: Player = $Player
-@onready var _gs: Node = get_node_or_null("/root/GameState")
+@onready var _gs: Node = get_node_or_null("/root/RunState")
 
 var _in_battle := false
 var _game_over := false
@@ -51,6 +53,23 @@ func _ready() -> void:
 	player.tile_map_layer = tile_map_layer
 	player.snap_to_cell(start)
 	player.moved.connect(_on_player_moved)
+	# A fresh run needs a starter before the player can move.
+	if _gs != null and not _gs.has_living():
+		player.set_physics_process(false)
+		_show_starter_select()
+
+
+func _show_starter_select() -> void:
+	var sel: StarterSelect = STARTER_SELECT.new()
+	sel.setup(REGULAR_ENEMIES)   # the weaker common monsters are the starter pool
+	sel.chosen.connect(_on_starter_chosen.bind(sel))
+	add_child(sel)
+
+
+func _on_starter_chosen(monster: MonsterData, sel: StarterSelect) -> void:
+	_gs.new_run(monster)
+	sel.queue_free()
+	player.set_physics_process(true)
 
 
 ## Paint the ASCII map into the TileMapLayer. Returns the player's start cell.
@@ -89,14 +108,14 @@ func _on_player_moved(cell: Vector2i) -> void:
 		return
 	battle_triggered.emit(cell)
 	var is_boss: bool = td.get_custom_data("boss")
-	var enemy: EnemyData = BOSS_ENEMY if is_boss else REGULAR_ENEMIES[randi() % REGULAR_ENEMIES.size()]
+	var enemy: MonsterData = BOSS_ENEMY if is_boss else REGULAR_ENEMIES[randi() % REGULAR_ENEMIES.size()]
 	_start_battle(enemy, cell)
 
 
-func _start_battle(enemy: EnemyData, cell: Vector2i) -> void:
-	# No GameState (e.g. a headless unit test) means no live battle — the trigger
-	# signal has already fired, which is all such tests check.
-	if _gs == null or _in_battle:
+func _start_battle(enemy: MonsterData, cell: Vector2i) -> void:
+	# No RunState / no living party (e.g. a headless unit test) means no live battle —
+	# the trigger signal has already fired, which is all such tests check.
+	if _gs == null or _in_battle or not _gs.has_living():
 		return
 	_in_battle = true
 	player.set_physics_process(false)
@@ -107,22 +126,23 @@ func _start_battle(enemy: EnemyData, cell: Vector2i) -> void:
 	_active_battle = battle
 
 
-func _on_battle_finished(result: int, enemy: EnemyData, cell: Vector2i) -> void:
+func _on_battle_finished(result: int, enemy: MonsterData, cell: Vector2i) -> void:
 	if _active_battle != null:
 		_active_battle.queue_free()
 		_active_battle = null
 	_in_battle = false
+	_gs.prune_dead()   # permadeath: drop any monster that fell this battle
 
 	match result:
 		Battle.Result.PLAYER_LOST:
 			_show_banner("GAME OVER\nPress R to try again.", Color(0.85, 0.28, 0.28))
 			return
 		Battle.Result.PLAYER_WON:
-			_gs.add_xp(enemy.xp_reward)
 			if enemy.is_boss:
 				_show_banner("YOU WIN!\nThe Griffin is vanquished.", Color(0.9, 0.75, 0.25))
 				return
-			_paint(cell, FLOOR)   # clear the defeated monster so it can't retrigger
+			_gs.add_monster(enemy)   # recruit the defeated wild monster (skipped if full)
+			_paint(cell, FLOOR)      # clear the defeated monster so it can't retrigger
 		Battle.Result.FLED:
 			pass
 
@@ -152,5 +172,5 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _game_over and event is InputEventKey and event.pressed and not event.echo \
 			and event.keycode == KEY_R:
 		if _gs != null:
-			_gs.new_game()
+			_gs.new_run(null)   # clear the party; _ready will prompt for a new starter
 		get_tree().reload_current_scene()

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="1_40ohk"]
+
+[resource]
+script = ExtResource("1_40ohk")
+id = "bat"
+display_name = "Cave Bat"
+max_hp = 12
+attack = 6
+defense = 1
+speed = 8
+is_starter = true
+tint = Color(0.59, 0.43, 0.78, 1)

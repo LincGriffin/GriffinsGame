@@ -1,8 +1,9 @@
 class_name Combatant
 extends RefCounted
 ## A runtime combat participant: mutable HP plus a per-turn "defending" stance.
-## Built from an EnemyData (enemies) or from GameState's fields (the player).
-## The damage math is static and pure so it can be unit-tested without a scene.
+## Built from a MonsterData — both wild enemies and recruited party monsters use the
+## same data. The damage math is static and pure so it can be unit-tested without a
+## scene.
 
 var display_name: String
 var max_hp: int
@@ -12,6 +13,7 @@ var defense: int
 var speed: int
 var is_boss: bool = false
 var defending := false
+var source: MonsterData = null   # the static def this came from (null for make())
 
 
 func is_alive() -> bool:
@@ -38,8 +40,12 @@ static func make(display_name: String, max_hp: int, attack: int, defense: int,
 	return c
 
 
-static func from_enemy(e: EnemyData) -> Combatant:
-	return make(e.display_name, e.max_hp, e.attack, e.defense, e.speed, e.is_boss)
+## Build a full-HP combatant from a monster definition — used for wild enemies and
+## for freshly recruited party members alike.
+static func from_monster(m: MonsterData) -> Combatant:
+	var c := make(m.display_name, m.max_hp, m.attack, m.defense, m.speed, m.is_boss)
+	c.source = m
+	return c
 
 
 ## Pure damage formula: attack minus half the target's defense, small variance,
