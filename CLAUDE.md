@@ -11,6 +11,10 @@ defeat enemies, reach and defeat a final boss.
 
 Renderer: GL Compatibility. Physics: Jolt.
 
+**Design & roadmap:** the target direction (roguelike monster-collector — branching node-map,
+auto-recruited monsters, one-active-fighter battles, Magna-Tiles art) and the phased build order
+live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
+
 ### Layout
 - `scenes/{overworld,battle,ui}` — scenes. Overworld movement lives in `scenes/overworld/`.
 - `scripts/` — GDScript. `player.gd`, `overworld.gd` implemented.
