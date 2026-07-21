@@ -64,6 +64,18 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   player cell + tile data; cheats `H` (toggle hold-to-move) and `K` (set the whole party to 1 HP). It
   finds live nodes via the `player`/`battle` groups, so it works in any scene.
 
+### Run & node-map (Phase 2)
+
+- The **main scene is `scenes/map/run.tscn`** (`scripts/run.gd`), not the walkable room. A run:
+  pick a starter → a **procedurally-generated branching node-map** (`scripts/map/map_generator.gd`, a
+  layered DAG that forks/reconnects and funnels to the Griffin) rendered by `scripts/map/map_view.gd`.
+- Selecting a node resolves it: **battle** (wild → auto-recruit) / **boss** / **heal** (full party) /
+  **powerup** (+max HP party-wide) / **teleport** (jump ~2 rows ahead). Win the boss → YOU WIN; a
+  party wipe → GAME OVER (press **R** → fresh run + new starter). Nothing persists between runs.
+- The map lives in `run.gd` (regenerated each run); `RunState` still owns only the party.
+- **Deferred** (kept for later): hybrid **walkable rooms** for treasure/rest nodes will reuse
+  `overworld.gd` / `player.gd` (dormant now); also elite nodes and a power-up chooser.
+
 ## Build / validate workflow (this machine)
 
 - **Godot binary:** `C:\Users\Dad\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe`
@@ -87,7 +99,7 @@ GODOT="/c/Users/Dad/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_
 
 Generators (rebuild content; re-run after changing what they produce):
 - `gen_art.gd` — placeholder PNGs · `gen_tileset.gd` — TileSet `.tres`
-- `gen_scenes.gd` — packs `.tscn` (player, overworld, battle, debug overlay)
+- `gen_scenes.gd` — packs `.tscn` (player, overworld, battle, debug overlay, run)
 - `gen_project.gd` — input map + main scene + autoloads via `ProjectSettings`
 - `gen_content.gd` — monster roster → `assets/data/monsters/*.tres` (edit the table there to rebalance)
 

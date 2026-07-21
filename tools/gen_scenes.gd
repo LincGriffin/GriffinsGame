@@ -9,6 +9,7 @@ func _init() -> void:
 	_make_overworld_scene()
 	_make_battle_scene()
 	_make_debug_overlay_scene()
+	_make_run_scene()
 	print("gen_scenes: done")
 	quit()
 
@@ -158,6 +159,16 @@ func _make_debug_overlay_scene() -> void:
 	_add(root, label, root)
 
 	_save(root, "res://scenes/ui/debug_overlay.tscn")
+
+
+func _make_run_scene() -> void:
+	# The node-map run controller (the main scene). Just a Node + script; the map view
+	# and battle/banner overlays are all built in code at runtime.
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://scenes/map/"))
+	var root := Node.new()
+	root.name = "Run"
+	root.set_script(load("res://scripts/run.gd"))
+	_save(root, "res://scenes/map/run.tscn")
 
 
 func _attach(root: Node, child: Node) -> void:
