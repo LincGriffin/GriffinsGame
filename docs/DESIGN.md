@@ -167,11 +167,11 @@ skeleton with placeholder fights first — flagged.)*
 
 | Phase | Branch | Delivers | Depends on |
 |---|---|---|---|
-| **0** | `docs/design-roadmap` | **This doc.** | — |
-| **1** | `feat/monster-collection` | **Starter selection** (pick 1 of 3), `MonsterData` unification, `RunState` party of monsters (persistent per-member HP), **auto-recruit on win**, and the **one-active-monster / switch-on-death / permadeath** battle rewrite (**lose only on party wipe**). Still in the existing single room. | 0 |
-| **2** | `feat/node-map` | The **branching node-map + roguelike run shell**: `map_generator` (layered DAG), `map_view`, node types (battle / heal / power-up[+max HP] / teleport / boss; treasure/rest → hybrid rooms). Run ends on party wipe → fresh run; nothing persists. | 1 |
-| **3** | `feat/moves` | `MoveData` + `gen_moves`, per-monster **movesets**, richer command menu; power-up nodes can now grant **new moves**. | 1 (2 for move-granting nodes) |
-| **4** | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
+| **0** ✅ | `docs/design-roadmap` | **This doc.** | — |
+| **1** ✅ | `feat/monster-collection` | **Starter selection** (pick 1 of 3), `MonsterData` unification, `RunState` party of monsters (persistent per-member HP), **auto-recruit on win**, and the **one-active-monster / switch-on-death / permadeath** battle rewrite (**lose only on party wipe**). Still in the existing single room. | 0 |
+| **2** ✅ | `feat/node-map` | The **branching node-map + roguelike run shell**: `map_generator` (layered DAG), `map_view`, node types (battle / heal / power-up[+max HP] / teleport / boss; treasure/rest → hybrid rooms). Run ends on party wipe → fresh run; nothing persists. | 1 |
+| **3** ✅ | `feat/moves` | `MoveData` + `gen_moves`, per-monster **movesets**, richer command menu; power-up nodes can now grant **new moves**. | 1 (2 for move-granting nodes) |
+| **4** ✅ | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
 | **5** | `feat/content-balance` | Roster/moveset expansion, node-distribution and power-up-pool tuning, teleport behavior, added tests, balance. | 2, 3 |
 | **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
 | **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
