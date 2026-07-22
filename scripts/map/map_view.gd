@@ -14,7 +14,7 @@ const NODE_SIZE := Vector2(104, 46)
 
 const LABELS := {
 	"battle": "Fight", "heal": "Heal", "powerup": "Power",
-	"teleport": "Warp", "boss": "BOSS",
+	"teleport": "Warp", "room": "Room", "boss": "BOSS",
 }
 
 var _map: Dictionary = {}

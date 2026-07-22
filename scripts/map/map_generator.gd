@@ -15,10 +15,11 @@ const PATHS := 6          # wandering paths seeded through the grid
 
 # Encounter-type weights for intermediate rows (row 0 is always a battle to ease in).
 const TYPE_WEIGHTS := {
-	"battle": 60,
-	"heal": 14,
-	"powerup": 14,
-	"teleport": 12,
+	"battle": 54,
+	"heal": 13,
+	"powerup": 13,
+	"teleport": 10,
+	"room": 10,
 }
 
 var _nodes: Array = []

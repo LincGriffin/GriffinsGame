@@ -10,6 +10,7 @@ func _init() -> void:
 	_make_battle_scene()
 	_make_debug_overlay_scene()
 	_make_run_scene()
+	_make_room_scene()
 	print("gen_scenes: done")
 	quit()
 
@@ -169,6 +170,23 @@ func _make_run_scene() -> void:
 	root.name = "Run"
 	root.set_script(load("res://scripts/run.gd"))
 	_save(root, "res://scenes/map/run.tscn")
+
+
+func _make_room_scene() -> void:
+	# A walkable treasure room (Node2D + TileMapLayer + Player) opened by "room" nodes.
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://scenes/map/"))
+	var root := Node2D.new()
+	root.name = "Room"
+	root.set_script(load("res://scripts/room.gd"))
+	var tml := TileMapLayer.new()
+	tml.name = "TileMapLayer"
+	tml.tile_set = load("res://assets/tilesets/dungeon_tileset.tres")
+	_attach(root, tml)
+	var player_inst: Node = load("res://scenes/overworld/player.tscn").instantiate()
+	player_inst.name = "Player"
+	root.add_child(player_inst)
+	player_inst.owner = root
+	_save(root, "res://scenes/map/room.tscn")
 
 
 func _attach(root: Node, child: Node) -> void:

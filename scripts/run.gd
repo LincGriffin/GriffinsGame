@@ -11,6 +11,7 @@ const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
 const MAP_VIEW := preload("res://scripts/map/map_view.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
+const ROOM_SCENE := preload("res://scenes/map/room.tscn")
 
 const REGULAR_ENEMIES: Array[MonsterData] = [
 	preload("res://assets/data/monsters/slime.tres"),
@@ -27,6 +28,7 @@ const MOVE_POOL: Array[MoveData] = [
 ]
 
 const POWERUP_HP := 6   # +max HP a power-up grants when no new move can be learned
+const ROOM_BONUS_HP := 5   # +max HP the treasure room grants party-wide
 
 var _gs: Node
 var _rng := RandomNumberGenerator.new()
@@ -37,6 +39,7 @@ var _pre_reachable: Array = []
 var _map_layer: CanvasLayer
 var _view = null
 var _active_battle: Battle = null
+var _active_room = null
 var _busy := false
 var _ended := false
 
@@ -100,6 +103,8 @@ func _on_node_selected(id: int) -> void:
 			_advance(id)
 		"teleport":
 			_teleport(id)
+		"room":
+			_open_room(id)
 		_:
 			_advance(id)
 
@@ -164,6 +169,27 @@ func _teleport(id: int) -> void:
 	_reachable = jump
 	_busy = false
 	_view.set_state(_reachable, _cleared)
+
+
+func _open_room(id: int) -> void:
+	# Hand off to a small walkable tile room; the map hides while the player walks to
+	# the chest, then the reward is applied and the run advances.
+	var room := ROOM_SCENE.instantiate()
+	room.finished.connect(_on_room_finished.bind(id))
+	add_child(room)
+	_active_room = room
+	_map_layer.visible = false
+
+
+func _on_room_finished(id: int) -> void:
+	if _active_room != null:
+		_active_room.queue_free()
+		_active_room = null
+	_map_layer.visible = true
+	for c in _gs.party:   # treasure: a small permanent +max HP to the whole party
+		c.max_hp += ROOM_BONUS_HP
+		c.hp += ROOM_BONUS_HP
+	_advance(id)
 
 
 func _heal_party() -> void:
