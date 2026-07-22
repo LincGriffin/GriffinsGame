@@ -15,3 +15,4 @@ extends Resource
 @export var is_boss: bool = false    # the final boss; defeating it wins the run
 @export var is_starter: bool = false # eligible to be offered as a run-start starter
 @export var tint: Color = Color.WHITE   # placeholder sprite colour
+@export var moves: Array[MoveData] = []   # the monster's battle moves

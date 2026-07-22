@@ -1,9 +1,13 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="1_l65yv"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_h88iu"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_145q5"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_l4s6r"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="4_ysyyi"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_lt1f0"]
 
 [resource]
-script = ExtResource("1_l65yv")
+script = ExtResource("5_lt1f0")
 id = "skeleton"
 display_name = "Skeleton"
 max_hp = 24
@@ -12,3 +16,4 @@ defense = 4
 speed = 4
 is_starter = true
 tint = Color(0.86, 0.86, 0.82, 1)
+moves = Array[ExtResource("1_h88iu")]([ExtResource("2_145q5"), ExtResource("3_l4s6r"), ExtResource("4_ysyyi")])

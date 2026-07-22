@@ -1,9 +1,9 @@
 class_name Combatant
 extends RefCounted
-## A runtime combat participant: mutable HP plus a per-turn "defending" stance.
-## Built from a MonsterData — both wild enemies and recruited party monsters use the
-## same data. The damage math is static and pure so it can be unit-tested without a
-## scene.
+## A runtime combat participant: mutable HP, a per-turn "defending" stance, and the
+## monster's moves. Built from a MonsterData — both wild enemies and recruited party
+## monsters use the same data. The damage math is static and pure so it can be
+## unit-tested without a scene.
 
 var display_name: String
 var max_hp: int
@@ -14,6 +14,7 @@ var speed: int
 var is_boss: bool = false
 var defending := false
 var source: MonsterData = null   # the static def this came from (null for make())
+var moves: Array = []            # Array[MoveData] — copied so run-time grants don't touch the resource
 
 
 func is_alive() -> bool:
@@ -41,19 +42,21 @@ static func make(display_name: String, max_hp: int, attack: int, defense: int,
 
 
 ## Build a full-HP combatant from a monster definition — used for wild enemies and
-## for freshly recruited party members alike.
+## for freshly recruited party members alike. Moves are duplicated so that granting a
+## monster a new move at run time never mutates the shared MonsterData resource.
 static func from_monster(m: MonsterData) -> Combatant:
 	var c := make(m.display_name, m.max_hp, m.attack, m.defense, m.speed, m.is_boss)
 	c.source = m
+	c.moves = m.moves.duplicate()
 	return c
 
 
-## Pure damage formula: attack minus half the target's defense, small variance,
-## halved (rounded down) if the target is defending, never below 1. Pass a seeded
-## `rng` in tests for determinism, or null to skip variance entirely.
+## Pure damage formula: attack (+ the move's power) minus half the target's defense,
+## small variance, halved (rounded down) if the target is defending, never below 1.
+## Pass a seeded `rng` in tests for determinism, or null to skip variance entirely.
 static func compute_damage(attacker: Combatant, target: Combatant,
-		rng: RandomNumberGenerator = null) -> int:
-	var dmg := attacker.attack - int(floor(target.defense / 2.0))
+		rng: RandomNumberGenerator = null, move_power: int = 0) -> int:
+	var dmg := attacker.attack + move_power - int(floor(target.defense / 2.0))
 	if rng != null:
 		dmg += rng.randi_range(-1, 1)
 	if target.defending:

@@ -19,7 +19,14 @@ const REGULAR_ENEMIES: Array[MonsterData] = [
 ]
 const BOSS_ENEMY: MonsterData = preload("res://assets/data/monsters/griffin.tres")
 
-const POWERUP_HP := 6   # +max HP granted by a power-up node
+const MOVE_POOL: Array[MoveData] = [
+	preload("res://assets/data/moves/strike.tres"),
+	preload("res://assets/data/moves/heavy.tres"),
+	preload("res://assets/data/moves/guard.tres"),
+	preload("res://assets/data/moves/mend.tres"),
+]
+
+const POWERUP_HP := 6   # +max HP a power-up grants when no new move can be learned
 
 var _gs: Node
 var _rng := RandomNumberGenerator.new()
@@ -165,10 +172,32 @@ func _heal_party() -> void:
 
 
 func _apply_powerup() -> void:
-	# A small, permanent +max HP to the whole party (healed by the bonus amount).
-	for c in _gs.party:
-		c.max_hp += POWERUP_HP
-		c.hp += POWERUP_HP
+	# Prefer teaching a random living monster a new move; if every monster already
+	# knows every move, fall back to a small party-wide +max HP.
+	var learners: Array = []
+	for c in _gs.living():
+		for mv in MOVE_POOL:
+			if not _knows(c, mv):
+				learners.append(c)
+				break
+	if learners.is_empty():
+		for c in _gs.party:
+			c.max_hp += POWERUP_HP
+			c.hp += POWERUP_HP
+		return
+	var learner = learners[_rng.randi_range(0, learners.size() - 1)]
+	var unknown: Array = []
+	for mv in MOVE_POOL:
+		if not _knows(learner, mv):
+			unknown.append(mv)
+	learner.moves.append(unknown[_rng.randi_range(0, unknown.size() - 1)])
+
+
+func _knows(c, mv) -> bool:
+	for m in c.moves:
+		if m.id == mv.id:
+			return true
+	return false
 
 
 func _win() -> void:
