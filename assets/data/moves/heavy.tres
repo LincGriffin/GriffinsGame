@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_yns44"]
+
+[resource]
+script = ExtResource("1_yns44")
+id = "heavy"
+display_name = "Heavy Blow"
+power = 5
+description = "A powerful strike."

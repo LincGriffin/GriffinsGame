@@ -1,12 +1,16 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="1_vfbna"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_uvxxm"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_o2ijd"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_e831d"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_mqmeg"]
 
 [resource]
-script = ExtResource("1_vfbna")
+script = ExtResource("4_mqmeg")
 id = "slime"
 display_name = "Green Slime"
 max_hp = 18
 speed = 3
 is_starter = true
 tint = Color(0.35, 0.78, 0.35, 1)
+moves = Array[ExtResource("1_uvxxm")]([ExtResource("2_o2ijd"), ExtResource("3_e831d")])
