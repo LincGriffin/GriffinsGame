@@ -67,9 +67,27 @@ func _make_battle_scene() -> void:
 
 	var bg := ColorRect.new()
 	bg.name = "Background"
-	bg.color = Color(0.06, 0.07, 0.10, 1.0)
+	bg.color = Color(0.04, 0.05, 0.11, 1.0)   # deep translucent-plastic navy
 	_add(root, bg, root)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	# A translucent "stage" panel (Magna-Tiles backlit look) sits behind the battle HUD.
+	var stage := Panel.new()
+	stage.name = "Stage"
+	_add(root, stage, root)
+	stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["offset_left", "offset_top"]:
+		stage.set(side, 18)
+	for side in ["offset_right", "offset_bottom"]:
+		stage.set(side, -18)
+	var stage_sb := StyleBoxFlat.new()
+	stage_sb.bg_color = Color(0.20, 0.34, 0.85, 0.16)
+	stage_sb.set_border_width_all(2)
+	stage_sb.border_color = Color(0.50, 0.68, 1.0, 0.55)
+	stage_sb.set_corner_radius_all(20)
+	stage_sb.shadow_color = Color(0.30, 0.45, 0.95, 0.30)
+	stage_sb.shadow_size = 10
+	stage.add_theme_stylebox_override("panel", stage_sb)
 
 	var panel := MarginContainer.new()
 	panel.name = "Panel"
