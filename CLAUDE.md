@@ -73,11 +73,15 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   pick a starter → a **procedurally-generated branching node-map** (`scripts/map/map_generator.gd`, a
   layered DAG that forks/reconnects and funnels to the Griffin) rendered by `scripts/map/map_view.gd`.
 - Selecting a node resolves it: **battle** (wild → auto-recruit) / **boss** / **heal** (full party) /
-  **powerup** (+max HP party-wide) / **teleport** (jump ~2 rows ahead). Win the boss → YOU WIN; a
-  party wipe → GAME OVER (press **R** → fresh run + new starter). Nothing persists between runs.
+  **powerup** (teach a monster a new move, else +max HP) / **teleport** (jump ~2 rows ahead) /
+  **room** (a walkable treasure room, below). Win the boss → YOU WIN; a party wipe → GAME OVER
+  (press **R** → fresh run + new starter). Nothing persists between runs.
 - The map lives in `run.gd` (regenerated each run); `RunState` still owns only the party.
-- **Deferred** (kept for later): hybrid **walkable rooms** for treasure/rest nodes will reuse
-  `overworld.gd` / `player.gd` (dormant now); also elite nodes and a power-up chooser.
+- **Hybrid walkable rooms:** a **room** node opens `scenes/map/room.tscn` (`scripts/room.gd`) — a small
+  tile room reusing the grid-movement engine (`player.gd`); reach the gold chest to earn a party-wide
+  +max HP and return to the map. (`overworld.gd` / `overworld.tscn` are retained as the movement test
+  fixture — `tools/tests/test_overworld.gd`.)
+- **Deferred** (kept for later): elite nodes, a power-up / target chooser, and a rest-vs-treasure split.
 
 ## Build / validate workflow (this machine)
 

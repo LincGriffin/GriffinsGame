@@ -68,6 +68,6 @@ func test_deterministic_with_same_seed() -> void:
 
 
 func test_only_known_types() -> void:
-	var allowed := ["battle", "heal", "powerup", "teleport", "boss"]
+	var allowed := ["battle", "heal", "powerup", "teleport", "room", "boss"]
 	for n in _gen()["nodes"]:
 		check(allowed.has(n["type"]), "node type '%s' is known" % n["type"])

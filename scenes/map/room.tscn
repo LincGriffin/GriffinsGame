@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/room.gd" id="1_h6lm5"]
+[ext_resource type="TileSet" path="res://assets/tilesets/dungeon_tileset.tres" id="2_qppqf"]
+[ext_resource type="PackedScene" path="res://scenes/overworld/player.tscn" id="3_yv5c2"]
+[ext_resource type="Script" path="res://scripts/player.gd" id="4_qfafv"]
+
+[node name="Room" type="Node2D" unique_id=2070571553]
+script = ExtResource("1_h6lm5")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=10224008]
+tile_set = ExtResource("2_qppqf")
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=1763703144 instance=ExtResource("3_yv5c2")]
+script = ExtResource("4_qfafv")
