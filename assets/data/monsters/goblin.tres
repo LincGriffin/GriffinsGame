@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_16r3u"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_evttl"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_45hf1"]
+[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_8ulbv"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_nmhro"]
+
+[resource]
+script = ExtResource("5_nmhro")
+id = "goblin"
+display_name = "Goblin"
+max_hp = 28
+attack = 10
+defense = 4
+speed = 6
+tier = 2
+tint = Color(0.45, 0.7, 0.35, 1)
+moves = Array[ExtResource("1_16r3u")]([ExtResource("2_evttl"), ExtResource("3_45hf1"), ExtResource("4_8ulbv")])

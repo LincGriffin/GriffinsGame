@@ -32,14 +32,15 @@ Each **run**:
 1. You **choose one of three weaker starter monsters** (drawn from the common wild monsters found
    in a run). That lone monster is your starting party.
 2. You navigate a **branching node-map** — pick a path through a series of nodes; branches fork
-   and reconnect; the final node is the **Griffin** boss.
+   and reconnect; the final node is the **Hydra** boss. *(The Griffin — the game's namesake — is now
+   a fearsome **elite** guardian rather than the final boss.)*
 3. Most nodes are **battles**. Battles are one-monster-vs-one-monster. Win a wild battle → the
    defeated monster is **auto-recruited** into your party.
 4. Other nodes **heal**, grant a **static power-up**, or **teleport** you elsewhere on the map.
 5. **HP persists** between battles. A downed monster is **gone for the rest of the run**
    (permadeath). **When you have no monsters left to fight, the run ends** — that is the only way
    to lose.
-6. Reach and defeat the **Griffin** → you win the run. Lose your last monster → the run is over and
+6. Reach and defeat the **Hydra** → you win the run. Lose your last monster → the run is over and
    a **fresh run** begins (nothing carries over).
 
 Power comes from **which monsters you've collected** and **how you spend their HP across a run**,
@@ -113,8 +114,8 @@ duplicates, and stays consistent with "power comes from collection."
 | **Power-up** (static) | A lasting boost: **+max HP** now; **a new move** once moves ship. |
 | **Teleport** | Jump to a different node (skip ahead / cross to another branch). |
 | **Treasure / Rest room** | Opens a small **walkable tile room** (hybrid, below) with a pickup. *Flagged.* |
-| **Elite** | Tougher fight, better reward. *Flagged.* |
-| **Boss** | The Griffin — final node; win = victory. |
+| **Elite** | Tougher fight; win recruits the elite **and** full-heals the party. Gated to deeper rows. *(Phase 5.)* |
+| **Boss** | The Hydra — final node; win = victory. |
 
 **Hybrid rooms:** the node-map is how you travel, but **treasure/rest nodes open a small walkable
 tile room** that **reuses the existing grid-movement engine** — so the movement work already built
@@ -172,7 +173,7 @@ skeleton with placeholder fights first — flagged.)*
 | **2** ✅ | `feat/node-map` | The **branching node-map + roguelike run shell**: `map_generator` (layered DAG), `map_view`, node types (battle / heal / power-up[+max HP] / teleport / boss; treasure/rest → hybrid rooms). Run ends on party wipe → fresh run; nothing persists. | 1 |
 | **3** ✅ | `feat/moves` | `MoveData` + `gen_moves`, per-monster **movesets**, richer command menu; power-up nodes can now grant **new moves**. | 1 (2 for move-granting nodes) |
 | **4** ✅ | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
-| **5** | `feat/content-balance` | Roster/moveset expansion, node-distribution and power-up-pool tuning, teleport behavior, added tests, balance. | 2, 3 |
+| **5** ✅ | `feat/content-balance` | **12-monster roster with difficulty tiers** (wild encounters scale with map depth), **new move kinds** (drain lifesteal, focus buff, slam), an **Elite node** type (recruit + heal), the **Hydra** final boss (the Griffin becomes an elite), and the **Chicken** starter. Added tests. | 2, 3 |
 | **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
 | **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
 

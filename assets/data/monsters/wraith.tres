@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_rydtg"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_mvv5i"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_2buay"]
+[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_rpduf"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_8y61e"]
+
+[resource]
+script = ExtResource("5_8y61e")
+id = "wraith"
+display_name = "Wraith"
+max_hp = 32
+attack = 13
+defense = 5
+speed = 8
+tier = 3
+tint = Color(0.5, 0.5, 0.72, 1)
+moves = Array[ExtResource("1_rydtg")]([ExtResource("2_mvv5i"), ExtResource("3_2buay"), ExtResource("4_rpduf")])

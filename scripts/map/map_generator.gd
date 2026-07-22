@@ -7,19 +7,22 @@ extends RefCounted
 ## Returns a plain Dictionary:
 ##   { nodes: Array[Dictionary], start_row_nodes: Array[int], boss: int, rows: int }
 ## Each node: { id:int, row:int, col:int, type:String, to:Array[int] }.
-## `type` is one of: battle, heal, powerup, teleport, boss.
+## `type` is one of: battle, heal, powerup, teleport, room, elite, boss.
 
 const WIDTH := 4          # columns available per row
 const NORMAL_ROWS := 6    # rows 0..5 are normal encounters; row 6 is the boss
 const PATHS := 6          # wandering paths seeded through the grid
+const ELITE_MIN_ROW := 2  # elites only appear from this row on (early rows stay gentle)
 
 # Encounter-type weights for intermediate rows (row 0 is always a battle to ease in).
+# "elite" is only in the pool from ELITE_MIN_ROW onward (see _weighted_type).
 const TYPE_WEIGHTS := {
-	"battle": 54,
-	"heal": 13,
-	"powerup": 13,
-	"teleport": 10,
-	"room": 10,
+	"battle": 50,
+	"heal": 12,
+	"powerup": 12,
+	"teleport": 9,
+	"room": 9,
+	"elite": 8,
 }
 
 var _nodes: Array = []
@@ -53,7 +56,7 @@ func generate(rng: RandomNumberGenerator) -> Dictionary:
 		if n["row"] == 0:
 			n["type"] = "battle"
 		elif n["row"] < NORMAL_ROWS:
-			n["type"] = _weighted_type(rng)
+			n["type"] = _weighted_type(rng, n["row"])
 
 	var starts: Array = []
 	for n in _nodes:
@@ -83,12 +86,17 @@ func _link(a: int, b: int) -> void:
 		_nodes[a]["to"].append(b)
 
 
-func _weighted_type(rng: RandomNumberGenerator) -> String:
+func _weighted_type(rng: RandomNumberGenerator, row: int) -> String:
+	# Elites are gated out of the early rows so the run eases in.
 	var total := 0
 	for k in TYPE_WEIGHTS:
+		if k == "elite" and row < ELITE_MIN_ROW:
+			continue
 		total += TYPE_WEIGHTS[k]
 	var roll := rng.randi_range(1, total)
 	for k in TYPE_WEIGHTS:
+		if k == "elite" and row < ELITE_MIN_ROW:
+			continue
 		roll -= TYPE_WEIGHTS[k]
 		if roll <= 0:
 			return k

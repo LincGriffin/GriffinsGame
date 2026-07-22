@@ -29,28 +29,51 @@ func test_take_damage_clamps_to_zero() -> void:
 
 
 func test_from_monster_copies_stats() -> void:
-	var griffin: MonsterData = load("res://assets/data/monsters/griffin.tres")
-	check(griffin != null, "griffin.tres loads")
-	check(griffin.is_boss, "griffin is flagged as the boss")
-	var c := Combatant.from_monster(griffin)
-	eq(c.max_hp, griffin.max_hp, "combatant max_hp comes from data")
-	eq(c.hp, griffin.max_hp, "combatant starts at full hp")
+	var hydra: MonsterData = load("res://assets/data/monsters/hydra.tres")
+	check(hydra != null, "hydra.tres loads")
+	check(hydra.is_boss, "the Hydra is flagged as the boss")
+	var c := Combatant.from_monster(hydra)
+	eq(c.max_hp, hydra.max_hp, "combatant max_hp comes from data")
+	eq(c.hp, hydra.max_hp, "combatant starts at full hp")
 	check(c.is_boss, "combatant carries the boss flag")
-	eq(c.source, griffin, "combatant remembers its source data")
+	eq(c.source, hydra, "combatant remembers its source data")
 
 
 func test_full_monster_roster_present() -> void:
-	for id in ["slime", "bat", "skeleton", "griffin"]:
+	for id in ["chicken", "slime", "bat", "rat", "skeleton", "goblin", "spider",
+			"golem", "wraith", "gremlin_knob", "griffin", "hydra"]:
 		var m = load("res://assets/data/monsters/%s.tres" % id)
 		check(m != null and m.id == id, "%s.tres exists with matching id" % id)
 
 
 func test_starter_flags() -> void:
-	for id in ["slime", "bat", "skeleton"]:
+	for id in ["chicken", "slime", "bat"]:
 		var m = load("res://assets/data/monsters/%s.tres" % id)
 		check(m.is_starter, "%s is a starter" % id)
-	var griffin = load("res://assets/data/monsters/griffin.tres")
-	check(not griffin.is_starter, "the boss is not a starter")
+		eq(m.tier, 0, "%s is a tier-0 (weakest) monster" % id)
+	for id in ["skeleton", "griffin", "hydra"]:
+		var m = load("res://assets/data/monsters/%s.tres" % id)
+		check(not m.is_starter, "%s is not a starter" % id)
+
+
+func test_elite_and_boss_flags() -> void:
+	for id in ["gremlin_knob", "griffin"]:
+		var m = load("res://assets/data/monsters/%s.tres" % id)
+		check(m.is_elite, "%s is an elite" % id)
+		check(not m.is_boss, "%s is not the boss" % id)
+	var hydra = load("res://assets/data/monsters/hydra.tres")
+	check(hydra.is_boss, "the Hydra is the boss")
+	check(not hydra.is_elite, "the boss is not tagged elite")
+
+
+func test_wild_tiers_span_a_range() -> void:
+	# Depth scaling relies on wild monsters covering tiers 0..3.
+	var tiers := {}
+	for id in ["chicken", "rat", "goblin", "golem"]:
+		var m = load("res://assets/data/monsters/%s.tres" % id)
+		tiers[m.tier] = true
+	for t in [0, 1, 2, 3]:
+		check(tiers.has(t), "a wild monster exists at tier %d" % t)
 
 
 # --- RunState: party / run lifecycle ---

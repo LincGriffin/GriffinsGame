@@ -10,11 +10,16 @@ extends SceneTree
 const OUT_DIR := "res://assets/data/moves/"
 
 # id, name, kind, power, description
+# kinds: attack (deal dmg) · guard (halve next hit) · heal (restore power HP) ·
+#        drain (deal dmg, heal user half the damage) · buff (raise user's attack by power)
 const MOVES := [
-	{"id": "strike", "name": "Strike",     "kind": "attack", "power": 0, "desc": "A reliable hit."},
-	{"id": "heavy",  "name": "Heavy Blow",  "kind": "attack", "power": 5, "desc": "A powerful strike."},
-	{"id": "guard",  "name": "Guard",       "kind": "guard",  "power": 0, "desc": "Brace — halve the next hit."},
-	{"id": "mend",   "name": "Mend",        "kind": "heal",   "power": 8, "desc": "Recover some HP."},
+	{"id": "strike", "name": "Strike",     "kind": "attack", "power": 0,  "desc": "A reliable hit."},
+	{"id": "heavy",  "name": "Heavy Blow",  "kind": "attack", "power": 5,  "desc": "A powerful strike."},
+	{"id": "slam",   "name": "Slam",        "kind": "attack", "power": 9,  "desc": "A crushing blow."},
+	{"id": "guard",  "name": "Guard",       "kind": "guard",  "power": 0,  "desc": "Brace — halve the next hit."},
+	{"id": "mend",   "name": "Mend",        "kind": "heal",   "power": 8,  "desc": "Recover some HP."},
+	{"id": "drain",  "name": "Drain",       "kind": "drain",  "power": 2,  "desc": "Bite and siphon — heal for half the damage."},
+	{"id": "focus",  "name": "Focus",       "kind": "buff",   "power": 3,  "desc": "Steel yourself — raise attack for the fight."},
 ]
 
 

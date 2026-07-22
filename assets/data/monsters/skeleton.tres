@@ -10,10 +10,10 @@
 script = ExtResource("5_lt1f0")
 id = "skeleton"
 display_name = "Skeleton"
-max_hp = 24
+max_hp = 22
 attack = 8
 defense = 4
 speed = 4
-is_starter = true
+tier = 1
 tint = Color(0.86, 0.86, 0.82, 1)
 moves = Array[ExtResource("1_h88iu")]([ExtResource("2_145q5"), ExtResource("3_l4s6r"), ExtResource("4_ysyyi")])

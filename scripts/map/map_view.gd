@@ -17,7 +17,7 @@ const NODE_SIZE := Vector2(104, 46)
 
 const LABELS := {
 	"battle": "Fight", "heal": "Heal", "powerup": "Power",
-	"teleport": "Warp", "room": "Room", "boss": "BOSS",
+	"teleport": "Warp", "room": "Room", "elite": "Elite", "boss": "BOSS",
 }
 
 # Per-type primary hues (translucent plastic chips).
@@ -27,6 +27,7 @@ const TYPE_COLOR := {
 	"powerup": Color(0.95, 0.80, 0.25),   # yellow
 	"teleport": Color(0.36, 0.55, 0.95),  # blue
 	"room": Color(0.95, 0.55, 0.20),      # orange
+	"elite": Color(0.70, 0.25, 0.75),     # purple — the tough one
 	"boss": Color(0.96, 0.78, 0.22),      # bright gold
 }
 
@@ -61,13 +62,14 @@ func setup(map: Dictionary) -> void:
 func _style_node(button: Button, type: String) -> void:
 	var hue: Color = TYPE_COLOR.get(type, Color(0.6, 0.6, 0.65))
 	var boss := type == "boss"
+	var emphatic := boss or type == "elite"   # tough encounters get a heavier glow
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(hue.r, hue.g, hue.b, 0.82)
-	sb.set_border_width_all(3 if boss else 2)
+	sb.set_border_width_all(3 if emphatic else 2)
 	sb.border_color = hue.lightened(0.35)
 	sb.set_corner_radius_all(12)
 	sb.shadow_color = Color(hue.r, hue.g, hue.b, 0.45)
-	sb.shadow_size = 8 if boss else 5
+	sb.shadow_size = 8 if emphatic else 5
 	sb.content_margin_top = 6
 	sb.content_margin_bottom = 6
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_nfrp6"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_r1dpc"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_um5t1"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_gcbcd"]
+
+[resource]
+script = ExtResource("4_gcbcd")
+id = "rat"
+display_name = "Sewer Rat"
+max_hp = 16
+attack = 7
+speed = 7
+tier = 1
+tint = Color(0.55, 0.45, 0.4, 1)
+moves = Array[ExtResource("1_nfrp6")]([ExtResource("2_r1dpc"), ExtResource("3_um5t1")])
