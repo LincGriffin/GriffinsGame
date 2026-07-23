@@ -214,6 +214,85 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   music, `node_heal`/`node_powerup`/`node_room`/`node_teleport` per node type, `win`/`lose`.
   `starter_select.gd`/`title_screen.gd` → `ui_select` on a card/dismiss click.
 
+### Testing infrastructure: BattleHarness
+
+`battle.tscn` had **no scene-level test coverage** until Phase 14 — its `_ready()` requires a
+live `/root/RunState` and unconditionally kicks off an async intro gated by real wall-clock
+timers, so driving it safely from a test needs shared infrastructure rather than each test
+reinventing it.
+
+- **`tools/tests/battle_harness.gd`** (`BattleHarness`) drives a REAL `battle.tscn` end-to-end —
+  builds a `RunState`-backed party, instantiates the scene, and offers `start(party, enemy)` /
+  `use_move(id)` / `switch_to(id)` / `flee()` / `resolve_prompt(id)`, all by `MonsterData`/`MoveData`
+  **id**, never by clicking buttons. Construct it with the actual `SceneTree` (`BattleHarness.new(tree)`
+  — `runner` in a test, `self` in a `--script extends SceneTree` tool), **not** a `Node`: calling
+  `.get_tree()` on a Node near a `--script` SceneTree's own `_init()` returns null before the tree
+  is fully wired up, which the existing `_base.gd` test convention already sidesteps by holding
+  the SceneTree directly.
+- **`battle.gd` gained two purely-additive signals for this**: `command_ready` (emitted at the top
+  of `_begin_player_command()`) and `monster_prompt_ready(options)` (emitted in `_prompt_monster`
+  right before it awaits a choice). `STEP` (message pacing) became a `var`, not `const`, so the
+  harness can zero it before `add_child()` for fast tests. Nothing in normal play observes either
+  signal or changes behavior.
+- **The tricky part was a signal race, not the scene wiring**: `battle._choice_made.emit(...)` can
+  resolve **synchronously all the way through to `command_ready`** whenever there's no real
+  `await` in between the choice and the next command prompt (e.g. cancelling a switch, or picking
+  the initial lead) — connecting listeners *after* the emit call simply misses that emission and
+  hangs forever. The fix (`_arm_beat()` / `_consume_beat()`) always connects listeners for the
+  next "beat" **before** triggering whatever might complete it, uniformly for every action, rather
+  than reasoning case-by-case about which paths happen to have an intervening await.
+- **`tools/tests/test_battle_scene.gd`** — real end-to-end tests using the harness: win/lose flow,
+  voluntary switch (changes the active monster, costs the turn, cancel costs nothing), forced
+  switch-on-faint (prompts when multiple survivors exist), and that Switch/Flee are shown/hidden
+  correctly. Uses deliberately lopsided fixture stats (a 1-HP side, a 50+ HP side) so outcomes are
+  guaranteed regardless of the ±1 damage variance, rather than trying to seed `battle._rng`
+  (`_ready()` unconditionally calls `_rng.randomize()`, so an externally-set seed wouldn't survive
+  anyway). Exact damage math is already covered by `test_battle.gd`'s pure `compute_damage` tests —
+  these are about the state machine.
+- **`tools/simulate_battle.gd`** — a standalone headless tool (same harness, same
+  `--script`-friendly `SceneTree` construction) that plays out many battles between a configured
+  party and enemy with a simple always-attack AI and reports win/loss/turn stats. Edit
+  `PARTY_IDS`/`ENEMY_ID`/`BATTLES` at the top and run it like any other `tools/` script. For manual
+  balance/functionality spot-checks, not a replacement for playing the game.
+- **`tools/tests/run_harness.gd`** (`RunHarness`) plays out a **full run** headlessly — starter
+  pick through every reachable node to the boss — for when validating one battle in isolation
+  isn't enough. It reuses `run.gd`'s own node-resolution methods on a **detached `Run` instance**
+  (`_heal_party`/`_apply_powerup`/`_grant_treasure`/`_assign_encounters`/etc. — same approach
+  `test_run.gd` already used) so node logic never drifts from what ships, and uses
+  `BattleHarness` for every fight. Since the dungeon is fully open/connected, "playing the run"
+  means resolving every node in row order (row 0 first, boss last), not modeling a literal walk
+  path — a thorough playthrough, not a beeline. `BattleHarness.start()` gained a `reset_party`
+  param (default `true`, unchanged for existing single-battle tests) so `RunHarness` can pass
+  `false` and fight every battle with the run's **actual evolving party** instead of a fresh one
+  reset between fights (which would silently wipe recruits and re-apply the starter boost on
+  every single battle).
+- **`tools/simulate_run.gd`** — a standalone tool (same `RunHarness`) that plays whole runs and
+  prints a play-by-play log plus win/loss. **Its built-in AI always attacks** — never guards,
+  heals, or switches proactively (only when forced by a faint) — so any win rate it reports is a
+  maximally-aggressive-play **lower bound**, useful for validating the mechanics work end-to-end
+  (recruiting, permadeath, node resolution, HP persisting across fights), not as a literal
+  difficulty benchmark. Edit `STARTER_ID`/`RUNS` at the top and run it.
+
+### Run tracking
+
+**`scripts/data/run_history.gd`** (`RunHistory`) persists a summary of every finished run — one
+JSON record per run, appended to a file in `user://` (`record()`/`load_all()`/`clear()`, all
+taking an explicit `path` so tests never touch the real files). Two separate logs share the same
+record shape (`starter_id`, `outcome`, `nodes_resolved`, `battles_fought`, `died_to`,
+`died_at_row`, `recruited`, `final_party`):
+- **`RunHistory.REAL_PATH`** (`user://run_history.json`) — written by `run.gd`'s `_win()`/
+  `_game_over()` for every actual playthrough. `run.gd` tracks the needed counters as it goes
+  (`_starter_id`, `_nodes_resolved`, `_battles_fought`, `_died_to`/`_died_at_row`, `_recruited`)
+  and assembles them via `_build_run_record(outcome)`.
+- **`RunHistory.SIMULATED_PATH`** (`user://run_history_simulated.json`) — written by
+  `RunHarness.play()` (default on; pass `record_history=false` to opt out) for
+  `tools/simulate_run.gd` batches, so Monte Carlo noise never mixes with real player history.
+- **`tools/report_run_history.gd`** — reads either log (`SOURCE := "real" | "simulated"`) and
+  prints win rate, average battles/nodes, average row reached on a loss, top causes of death,
+  starters used, and most-recruited monsters. This is currently **dev-facing** (balance
+  reference); the record shape was chosen so the same log could back an in-game "Run History"
+  screen later with no format changes.
+
 ## Build / validate workflow (this machine)
 
 - **Godot binary:** `C:\Users\Dad\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe`
@@ -245,12 +324,18 @@ Generators (rebuild content; re-run after changing what they produce):
 Quality gates:
 - **`run_tests.gd`** — headless test runner. Discovers `tools/tests/test_*.gd` suites (each
   `extends "res://tools/tests/_base.gd"`, with `test_*` methods and optional `before_each`/`after_each`).
-  Add a suite when you add a system; add assertions when you add behavior.
+  Add a suite when you add a system; add assertions when you add behavior. `tools/tests/` also
+  holds shared test infrastructure that isn't itself a suite — e.g. `battle_harness.gd` (see
+  "Testing infrastructure: BattleHarness" above) — safe because discovery only picks up
+  `test_*.gd` filenames.
 - **`doctor.gd`** — project health check: file-named directories, unset/missing `main_scene`, and any
   `.gd`/`.tscn`/`.tres` that fails to load.
 - **`hooks/`** — git hooks. `pre-commit` blocks committing directly on `main`; `pre-push` imports then
   runs doctor + tests. Install once per clone: `git config core.hooksPath tools/hooks`. Bypass with
   `--no-verify`; point at Godot with `GODOT=... git push`.
+
+Manual/simulation tools:
+- **`simulate_battle.gd`** — headless Monte Carlo battle simulator via `BattleHarness`; see above.
 
 PR helper:
 - **`open_pr.sh`** — `tools/open_pr.sh "<title>" <body.md> [base]` opens (or finds) the PR for the

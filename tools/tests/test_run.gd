@@ -34,3 +34,31 @@ func test_boss_node_enemy_is_the_hydra() -> void:
 		if n["type"] == "boss":
 			check(n["enemy"].is_boss, "the boss node's enemy is flagged as the boss")
 	run.free()
+
+
+## _build_run_record() only — never call _win()/_game_over() from a test, since both write to
+## the REAL user://run_history.json via RunHistory.record() (scripts/data/run_history.gd).
+func test_build_run_record_shape() -> void:
+	var run := _new_run()
+	var rs = load("res://autoload/run_state.gd").new()
+	rs.new_run(load("res://assets/data/monsters/slime.tres"))
+	run._gs = rs
+	run._starter_id = "slime"
+	run._nodes_resolved = 4
+	run._battles_fought = 2
+	run._died_to = "Goblin"
+	run._died_at_row = 3
+	run._recruited = ["bat"]
+
+	var record: Dictionary = run._build_run_record("lost")
+	eq(record["starter_id"], "slime", "starter_id carries through")
+	eq(record["outcome"], "lost", "outcome carries through")
+	eq(record["nodes_resolved"], 4, "nodes_resolved carries through")
+	eq(record["battles_fought"], 2, "battles_fought carries through")
+	eq(record["died_to"], "Goblin", "died_to carries through")
+	eq(record["died_at_row"], 3, "died_at_row carries through")
+	eq(record["recruited"], ["bat"], "recruited carries through")
+	eq(record["final_party"].size(), 1, "final_party has one entry (the starter)")
+	eq(record["final_party"][0]["id"], "slime", "final_party entries include the monster id")
+	run.free()
+	rs.free()

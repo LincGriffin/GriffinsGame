@@ -11,6 +11,7 @@ const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
 const SETTINGS_MENU := preload("res://scripts/settings_menu.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
+const RUN_HISTORY := preload("res://scripts/data/run_history.gd")
 
 # The wild pool spans difficulty tiers 0..3; the run draws depth-appropriate monsters
 # (see _pick_wild). Starters are the three tier-0 monsters.
@@ -64,6 +65,15 @@ var _fade_layer: CanvasLayer = null # the in-progress fade-to-black overlay, if 
 var _wild_by_tier: Dictionary = {}  # tier:int -> Array[MonsterData]
 var _max_tier := 0
 
+# Run tracking (scripts/data/run_history.gd) — recorded to user://run_history.json on win/loss.
+# Dev-facing for now (balance reference); the same log could back an in-game history screen later.
+var _starter_id := ""
+var _nodes_resolved := 0
+var _battles_fought := 0
+var _died_to := ""       # the enemy's display name, if the run was lost to one
+var _died_at_row := -1
+var _recruited: Array[String] = []   # monster ids recruited this run, in order
+
 
 func _ready() -> void:
 	_rng.randomize()
@@ -98,6 +108,7 @@ func _show_starter_select() -> void:
 	var sel: StarterSelect = STARTER_SELECT.new()
 	sel.setup(STARTER_ENEMIES)
 	sel.chosen.connect(func(m):
+		_starter_id = String(m.id)
 		_gs.new_run(m)
 		sel.queue_free()
 		_begin_run())
@@ -137,6 +148,7 @@ func _enter_room(id: int) -> void:
 	if _busy or _ended:
 		return
 	_busy = true
+	_nodes_resolved += 1
 	var node: Dictionary = _map["nodes"][id]
 	match node["type"]:
 		"battle", "elite", "boss":
@@ -164,6 +176,7 @@ func _do_battle(id: int, enemy: MonsterData) -> void:
 	if not _gs.has_living():
 		_game_over()
 		return
+	_battles_fought += 1
 	_view.set_walking(false)
 	var battle := BATTLE_SCENE.instantiate()
 	battle.setup(enemy)
@@ -179,12 +192,15 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 	_gs.prune_dead()
 	match result:
 		Battle.Result.PLAYER_LOST:
+			_died_to = enemy.display_name
+			_died_at_row = int(_map["nodes"][id]["row"])
 			_game_over()
 		Battle.Result.PLAYER_WON:
 			if enemy.is_boss:
 				_win()
 			else:
-				_gs.add_monster(enemy)
+				if _gs.add_monster(enemy):
+					_recruited.append(String(enemy.id))
 				if enemy.is_elite:
 					_heal_party()   # elite bonus: patch the party up after the tough fight
 				_advance(id)
@@ -300,6 +316,7 @@ func _pick_elite() -> MonsterData:
 
 func _win() -> void:
 	_sfx("win")
+	RUN_HISTORY.record(_build_run_record("won"))
 	if _view != null:
 		_view.set_walking(false)
 	_show_banner("YOU WIN!\nThe Hydra is vanquished.", Color(0.9, 0.75, 0.25))
@@ -307,9 +324,32 @@ func _win() -> void:
 
 func _game_over() -> void:
 	_sfx("lose")
+	RUN_HISTORY.record(_build_run_record("lost"))
 	if _view != null:
 		_view.set_walking(false)
 	_show_banner("GAME OVER\nPress R for a new run.", Color(0.85, 0.28, 0.28))
+
+
+## See scripts/data/run_history.gd for the record shape convention.
+func _build_run_record(outcome: String) -> Dictionary:
+	var final_party: Array = []
+	for c in _gs.party:
+		final_party.append({
+			"id": String(c.source.id) if c.source != null else "",
+			"display_name": c.display_name,
+			"hp": c.hp,
+			"max_hp": c.max_hp,
+		})
+	return {
+		"starter_id": _starter_id,
+		"outcome": outcome,
+		"nodes_resolved": _nodes_resolved,
+		"battles_fought": _battles_fought,
+		"died_to": _died_to,
+		"died_at_row": _died_at_row,
+		"recruited": _recruited,
+		"final_party": final_party,
+	}
 
 
 func _show_banner(text: String, color: Color) -> void:

@@ -15,8 +15,13 @@ enum State { INTRO, CHOOSE_LEAD, PLAYER_COMMAND, RESOLVING, SWITCHING, ENDED }
 
 signal finished(result: int, enemy: MonsterData)
 signal _choice_made(monster: Combatant)   # internal: a monster-select button was pressed
+## Synchronization points for driving a battle programmatically (BattleHarness) instead of
+## clicking through the UI — purely additive, nothing in normal play listens to these.
+signal command_ready                      # the command menu is up; _actions has live buttons
+signal monster_prompt_ready(options: Array)  # a monster-select prompt is up, awaiting a choice
 
-const STEP := 0.7   # seconds between battle messages (pacing)
+var STEP := 0.7   # seconds between battle messages (pacing) — a var (not const) so a test
+                   # harness can drop it to ~0 before add_child(); default matches normal play.
 const FLEE_CHANCE := 0.5
 const FLEE_ENABLED := false   # hidden for now — flip back on to restore the Flee command
 
@@ -119,6 +124,7 @@ func _begin_player_command() -> void:
 	_active.defending = false
 	_message.text = "What will %s do?" % _active.display_name
 	_build_command_buttons()
+	command_ready.emit()
 
 
 ## One button per move on the active monster, plus Switch (if another monster can take over)
@@ -349,6 +355,7 @@ func _prompt_monster(options: Array, allow_cancel: bool = false) -> Combatant:
 			func(): _choice_made.emit(c), PORTRAITS.for_monster(c.source))
 	if allow_cancel:
 		_add_button("Cancel", func(): _choice_made.emit(null))
+	monster_prompt_ready.emit(options)
 	var chosen: Combatant = await _choice_made
 	_clear_dynamic_buttons()
 	return chosen
