@@ -18,6 +18,7 @@ signal _choice_made(monster: Combatant)   # internal: a monster-select button wa
 
 const STEP := 0.7   # seconds between battle messages (pacing)
 const FLEE_CHANCE := 0.5
+const FLEE_ENABLED := false   # hidden for now — flip back on to restore the Flee command
 
 # HP bar juice: animated fill + a green/yellow/red tint by remaining percentage.
 const HP_TWEEN_TIME := 0.35
@@ -120,12 +121,15 @@ func _begin_player_command() -> void:
 	_build_command_buttons()
 
 
-## One button per move on the active monster, plus Flee (never against the boss).
+## One button per move on the active monster, plus Switch (if another monster can take over)
+## and Flee (hidden for now — see FLEE_ENABLED; never shown against the boss anyway).
 func _build_command_buttons() -> void:
 	_clear_dynamic_buttons()
 	for mv in _active.moves:
 		_add_button(mv.display_name, _on_move.bind(mv))
-	if not _enemy.is_boss:
+	if _living_party().size() > 1:
+		_add_button("Switch", _on_switch)
+	if FLEE_ENABLED and not _enemy.is_boss:
 		_add_button("Flee", _on_flee)
 
 
@@ -135,6 +139,29 @@ func _on_move(mv) -> void:
 	_state = State.RESOLVING
 	_clear_dynamic_buttons()
 	await _resolve_move(mv)
+
+
+## Voluntarily switch the active monster out before it faints — costs the turn (the enemy still
+## acts), same as guard/heal/buff. Cancel returns to the command menu with no turn spent.
+func _on_switch() -> void:
+	if _state != State.PLAYER_COMMAND:
+		return
+	var options := _living_party().filter(func(c): return c != _active)
+	if options.is_empty():
+		return
+	_state = State.RESOLVING
+	_clear_dynamic_buttons()
+	_message.text = "Switch to which monster?"
+	var next: Combatant = await _prompt_monster(options, true)
+	if next == null:
+		_begin_player_command()   # cancelled — no turn spent
+		return
+	_sfx("switch")
+	_set_active(next)
+	await _say("%s steps in!" % next.display_name)
+	await _enemy_turn()
+	if _state == State.ENDED: return
+	_begin_player_command()
 
 
 func _on_flee() -> void:
@@ -312,12 +339,16 @@ func _add_button(text: String, cb: Callable, icon: Texture2D = null) -> void:
 	_dynamic_buttons.append(b)
 
 
-## Build one button per monster option, wait for a press, then tear the buttons down.
-func _prompt_monster(options: Array) -> Combatant:
+## Build one button per monster option, wait for a press, then tear the buttons down. With
+## `allow_cancel`, an extra Cancel button resolves to null (used by a voluntary switch, where
+## backing out shouldn't cost the turn; the forced switch-on-faint prompt never allows this).
+func _prompt_monster(options: Array, allow_cancel: bool = false) -> Combatant:
 	_clear_dynamic_buttons()
 	for c in options:
 		_add_button("%s  (%d/%d)" % [c.display_name, c.hp, c.max_hp],
 			func(): _choice_made.emit(c), PORTRAITS.for_monster(c.source))
+	if allow_cancel:
+		_add_button("Cancel", func(): _choice_made.emit(null))
 	var chosen: Combatant = await _choice_made
 	_clear_dynamic_buttons()
 	return chosen

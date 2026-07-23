@@ -52,7 +52,8 @@ tile art did:
 | `move_buff` | The active monster uses a `buff` move |
 | `enemy_hit` | The enemy lands a hit on the active monster |
 | `faint` | A party monster is knocked out |
-| `flee` | A successful flee from battle |
+| `switch` | The player voluntarily swaps in another monster (costs the turn) |
+| `flee` | A successful flee from battle (hidden for now — `Battle.FLEE_ENABLED`) |
 | `victory` | The enemy is defeated |
 | `defeat` | The whole party is wiped (run over) |
 | `node_heal` | A heal-fountain node triggers |
