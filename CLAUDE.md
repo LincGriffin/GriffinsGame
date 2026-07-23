@@ -193,10 +193,14 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **`SoundManager`** (autoload) plays SFX and music by **convention-based id lookup** — same
   optional-art shape as `Portraits`/`MapSprites`: `scripts/data/sfx_library.gd` /
   `music_library.gd` look under `assets/audio/{sfx,music}/<id>.{ogg,wav,mp3}` (memoised, tries
-  all three extensions), and a missing id is always a **silent no-op**. The repo currently ships
-  with **zero real audio files** — the game is fully wired but silent until files are dropped in;
-  see `assets/audio/README.md` for the id vocabulary and file spec. Adding a sound is purely
-  "drop a file at the right path," no code or data changes.
+  all three extensions), and a missing id is always a **silent no-op**. The repo ships with a full
+  set of **CC0 SFX** (all 27 ids — Juhani Junkala's "512 Sound Effects" 8-bit pack, `.wav`) in
+  `assets/audio/sfx/`. **Music is present locally but intentionally untracked** (the four Junkala
+  "5 Action Chiptunes" tracks → `title`/`dungeon`/`battle`/`battle_boss`): they're ~41 MB of WAV
+  and are being held out of git until they can be re-encoded to compressed OGG — so a fresh clone
+  plays SFX but is silent on music until those files are dropped in. See `assets/audio/README.md`
+  for the id vocabulary and file spec. Adding or swapping a sound is purely "drop a file at the
+  right path," no code or data changes.
 - **API:** `SoundManager.play_sfx(id)` (round-robins across a small pool of `AudioStreamPlayer`s
   on an `"SFX"` bus so overlapping sounds don't cut each other off) and
   `SoundManager.play_music(id)` (one `AudioStreamPlayer` on a `"Music"` bus; re-requesting the

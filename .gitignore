@@ -22,6 +22,9 @@ mono_crash.*.json
 *.pck
 *.zip
 
+# Local reference/scratch material (raw asset downloads to copy from, not shipped)
+/reference/
+
 # OS-specific junk files
 .DS_Store
 Thumbs.db
