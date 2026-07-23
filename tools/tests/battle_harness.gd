@@ -52,12 +52,18 @@ func _init(tree: SceneTree) -> void:
 ## Build a RunState-backed party and start a battle against `enemy`. `lead_id` (a MonsterData id)
 ## picks the opening lead when the party has more than one monster; empty picks the first option.
 ## `fast` zeroes battle.gd's message-pacing delay (STEP) — leave it true unless a test genuinely
-## needs to see real timing.
-func start(party: Array, enemy: MonsterData, lead_id: String = "", fast := true) -> void:
+## needs to see real timing. `reset_party` seeds a fresh party from `party` via `RunState.new_run`
+## (the default — right for a standalone/single-battle test); pass false to instead fight with
+## whatever party an existing `/root/RunState` already has (right for a multi-battle run
+## simulation, where resetting between fights would wipe recruits and re-apply the starter boost
+## on every single battle) — `party` is ignored in that case.
+func start(party: Array, enemy: MonsterData, lead_id: String = "", fast := true,
+		reset_party := true) -> void:
 	_ensure_run_state()
-	run_state.new_run(party[0])
-	for i in range(1, party.size()):
-		run_state.add_monster(party[i])
+	if reset_party:
+		run_state.new_run(party[0])
+		for i in range(1, party.size()):
+			run_state.add_monster(party[i])
 
 	battle = BATTLE_SCENE.instantiate()
 	if fast:
@@ -67,7 +73,7 @@ func start(party: Array, enemy: MonsterData, lead_id: String = "", fast := true)
 	_root.add_child(battle)
 	await _consume_beat(armed)   # PROMPT (party > 1) or COMMAND (single monster, auto-picked)
 
-	if party.size() > 1:
+	if run_state.living().size() > 1:
 		var armed2 := _arm_beat()
 		battle._choice_made.emit(_pick(last_prompt_options, lead_id))
 		await _consume_beat(armed2)   # COMMAND (or FINISHED, if somehow arriving all-dead)

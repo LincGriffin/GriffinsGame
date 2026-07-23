@@ -254,6 +254,24 @@ reinventing it.
   party and enemy with a simple always-attack AI and reports win/loss/turn stats. Edit
   `PARTY_IDS`/`ENEMY_ID`/`BATTLES` at the top and run it like any other `tools/` script. For manual
   balance/functionality spot-checks, not a replacement for playing the game.
+- **`tools/tests/run_harness.gd`** (`RunHarness`) plays out a **full run** headlessly — starter
+  pick through every reachable node to the boss — for when validating one battle in isolation
+  isn't enough. It reuses `run.gd`'s own node-resolution methods on a **detached `Run` instance**
+  (`_heal_party`/`_apply_powerup`/`_grant_treasure`/`_assign_encounters`/etc. — same approach
+  `test_run.gd` already used) so node logic never drifts from what ships, and uses
+  `BattleHarness` for every fight. Since the dungeon is fully open/connected, "playing the run"
+  means resolving every node in row order (row 0 first, boss last), not modeling a literal walk
+  path — a thorough playthrough, not a beeline. `BattleHarness.start()` gained a `reset_party`
+  param (default `true`, unchanged for existing single-battle tests) so `RunHarness` can pass
+  `false` and fight every battle with the run's **actual evolving party** instead of a fresh one
+  reset between fights (which would silently wipe recruits and re-apply the starter boost on
+  every single battle).
+- **`tools/simulate_run.gd`** — a standalone tool (same `RunHarness`) that plays whole runs and
+  prints a play-by-play log plus win/loss. **Its built-in AI always attacks** — never guards,
+  heals, or switches proactively (only when forced by a faint) — so any win rate it reports is a
+  maximally-aggressive-play **lower bound**, useful for validating the mechanics work end-to-end
+  (recruiting, permadeath, node resolution, HP persisting across fights), not as a literal
+  difficulty benchmark. Edit `STARTER_ID`/`RUNS` at the top and run it.
 
 ## Build / validate workflow (this machine)
 
