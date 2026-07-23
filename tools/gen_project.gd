@@ -21,6 +21,11 @@ func _init() -> void:
 	ProjectSettings.set_setting("autoload/RunState", "*res://autoload/run_state.gd")
 	ProjectSettings.set_setting("autoload/DebugOverlay", "*res://scenes/ui/debug_overlay.tscn")
 
+	# Editor-only tooling. Has no effect on the shipped game (EditorPlugin scripts only run
+	# inside the Godot editor), but enabling it here means it's on by default in any clone.
+	ProjectSettings.set_setting("editor_plugins/enabled",
+		PackedStringArray(["res://addons/monster_editor/plugin.cfg"]))
+
 	var err := ProjectSettings.save()
 	assert(err == OK, "ProjectSettings.save failed")
 	print("gen_project: done")

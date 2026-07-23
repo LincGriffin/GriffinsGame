@@ -13,7 +13,9 @@ signal room_entered(id: int)
 
 const PLAYER_SCENE := preload("res://scenes/overworld/player.tscn")
 const TILESET := preload("res://assets/tilesets/dungeon_tileset.tres")
+const MAP_SPRITES := preload("res://scripts/data/map_sprites.gd")
 const SOURCE_ID := 0
+const TILE_SIZE := 64   # matches gen_art.gd / player.gd — see CLAUDE.md's 64px coupling note
 
 const FLOOR := Vector2i(0, 0)
 const WALL := Vector2i(1, 0)
@@ -36,6 +38,7 @@ var _map: Dictionary = {}
 var _origin: Dictionary = {}       # id -> Vector2i room top-left (incl. ENTRANCE)
 var _room_cells: Dictionary = {}   # interior Vector2i -> id (stepping it triggers the node)
 var _cleared: Dictionary = {}      # id -> true
+var _sprites: Dictionary = {}      # id -> Sprite2D (a room's map-sprite overlay, if any)
 
 
 func setup(map: Dictionary) -> void:
@@ -53,9 +56,9 @@ func setup(map: Dictionary) -> void:
 		_origin[int(n["id"])] = _cell_origin(int(n["row"]), int(n["col"]), rows)
 
 	# Paint every room (walls + interior + marker) and register its interior trigger cells.
-	_paint_room(ENTRANCE, null)
+	_paint_room(ENTRANCE, null, null)
 	for n in map["nodes"]:
-		_paint_room(int(n["id"]), MARKER.get(n["type"], FLOOR))
+		_paint_room(int(n["id"]), MARKER.get(n["type"], FLOOR), n.get("enemy"))
 
 	# Carve every corridor — all open, so the dungeon is one connected walkable space.
 	for s in map["start_row_nodes"]:
@@ -82,7 +85,10 @@ func _center(id: int) -> Vector2i:
 	return _origin[id] + Vector2i(2, 2)
 
 
-func _paint_room(id: int, marker) -> void:
+## `enemy` is the room's pre-rolled MonsterData (battle/elite/boss; null otherwise, from
+## run.gd's `_assign_encounters`). When it has map art (scripts/data/map_sprites.gd), that
+## sprite is drawn over the generic marker tile; absent art just leaves the marker as-is.
+func _paint_room(id: int, marker, enemy) -> void:
 	var o: Vector2i = _origin[id]
 	for dy in range(ROOM):
 		for dx in range(ROOM):
@@ -93,6 +99,22 @@ func _paint_room(id: int, marker) -> void:
 				_room_cells[c] = id   # stepping any interior cell triggers the node
 	if marker != null and id != ENTRANCE:
 		_paint(o + Vector2i(2, 2), marker)
+		_paint_map_sprite(id, o + Vector2i(2, 2), enemy)
+
+
+func _paint_map_sprite(id: int, cell: Vector2i, enemy) -> void:
+	var tex := MAP_SPRITES.for_monster(enemy)
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.position = tile_map_layer.map_to_local(cell)
+	spr.z_index = 1
+	var largest := maxf(tex.get_width(), tex.get_height())
+	if largest > 0:
+		spr.scale = Vector2.ONE * (float(TILE_SIZE) / largest)
+	add_child(spr)
+	_sprites[id] = spr
 
 
 # Carve a corridor from room a up to room b (b is one CELL above a). Route out of a's top
@@ -130,10 +152,14 @@ func set_walking(enabled: bool) -> void:
 		player.set_physics_process(enabled)
 
 
-## Mark a node resolved: drop its marker so it's walk-through and never retriggers.
+## Mark a node resolved: drop its marker (and any map-sprite overlay) so it's walk-through
+## and never retriggers.
 func clear_room(id: int) -> void:
 	_cleared[id] = true
 	_paint(_center(id), FLOOR)
+	if _sprites.has(id):
+		_sprites[id].queue_free()
+		_sprites.erase(id)
 
 
 func is_cleared(id: int) -> bool:
