@@ -92,6 +92,7 @@ func _show_starter_select() -> void:
 
 func _begin_run() -> void:
 	_map = MAP_GENERATOR.new().generate(_rng)
+	_assign_encounters()
 	_ended = false
 	_busy = false
 	if _view != null:
@@ -102,6 +103,20 @@ func _begin_run() -> void:
 	_view.setup(_map)
 
 
+## Roll each battle/elite/boss node's monster up front (rather than on room-entry) so
+## DungeonView can show a monster-specific map sprite on the marker when one exists
+## (scripts/data/map_sprites.gd), and so re-entering a fled fight shows the same monster.
+func _assign_encounters() -> void:
+	for n in _map["nodes"]:
+		match n["type"]:
+			"battle":
+				n["enemy"] = _pick_wild(int(n["row"]))
+			"elite":
+				n["enemy"] = _pick_elite()
+			"boss":
+				n["enemy"] = BOSS_ENEMY
+
+
 ## The player walked into an uncleared room — resolve that node.
 func _enter_room(id: int) -> void:
 	if _busy or _ended:
@@ -109,12 +124,8 @@ func _enter_room(id: int) -> void:
 	_busy = true
 	var node: Dictionary = _map["nodes"][id]
 	match node["type"]:
-		"battle":
-			_do_battle(id, _pick_wild(int(node["row"])))
-		"elite":
-			_do_battle(id, _pick_elite())
-		"boss":
-			_do_battle(id, BOSS_ENEMY)
+		"battle", "elite", "boss":
+			_do_battle(id, node["enemy"])
 		"heal":
 			_heal_party()
 			_advance(id)

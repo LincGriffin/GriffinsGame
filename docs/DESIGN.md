@@ -219,25 +219,35 @@ skeleton with placeholder fights first — flagged.)*
 | **8** ✅ | `feat/dungeon-art` | **Stained-glass tile art** — searched for CC0 packs (none matched, see below) and instead rebuilt the generated tiles at **64px** as true Magna-Tiles panels: beveled plastic frame, translucent backlit glass, specular sheen, faceted gem markers. | 4, 7 |
 | **9** ✅ | `feat/monster-portraits` | **Monster portraits** — optional per-monster art (`assets/portraits/<id>.png`, 256×256) on the starter-select cards, the battle enemy area, and the lead/switch buttons, with a **flat-tint fallback** so missing art never breaks a screen. Art is author-supplied (classic D&D monster style); the pipeline needs no generator re-run. | 1 |
 | **10** ✅ | `feat/title-and-balance` | **Title screen** (click to begin) + a **difficulty pass**: the chosen starter gets a one-time stat boost since it fights alone early on, and all monster HP runs **+25%** so an average fight lasts longer. | 1, 5 |
-| **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
+| **T** ✅ | `feat/monster-editor` | **Content tooling** — an in-editor monster/enemy editor for easy add / delete / modify (see below), plus a portrait/map-sprite linker and monster-specific map markers. Independent of the gameplay phases. | — |
 
-## Content tooling (later)
+## Content tooling
 
-Monsters and enemies are the **same `MonsterData`** resources, currently defined in the `ROSTER`
-table in `tools/gen_content.gd` (edit code, re-run the generator). As the roster grows, add a
-**monster/enemy editor tool** so content can be added, deleted, and modified without hand-editing
-code. Candidate approaches (pick when it's worth building):
+**`addons/monster_editor/`** is a Godot **EditorPlugin** dock ("Monsters", left panel) for adding,
+duplicating, editing, and deleting roster monsters without hand-editing `tools/gen_content.gd`'s
+`ROSTER` table. It only runs inside the Godot editor GUI (enabled by default via
+`project.godot`'s `[editor_plugins]`, written by `gen_project.gd`) — no effect on the shipped game.
 
-- **Data-file roster** — move `ROSTER` to an editable `assets/data/monsters.json` (or CSV) that
-  `gen_content.gd` reads; editing content becomes pure data, no code.
-- **In-editor tool** — a small Godot `@tool` scene / `EditorPlugin` that lists the `MonsterData`
-  `.tres` and creates / duplicates / edits / deletes them via the inspector.
-- **Headless CLI** — `tools/edit_monster.gd add|remove|set <id> <field=value>…` for scripted edits,
-  matching the existing headless-generator pattern.
-
-Whatever the form, it should cover all `MonsterData` fields (stats, `is_boss`, `is_starter`, `tint`,
-and later `moves`), keep `id`s unique, and re-run the needed generators + `--import`. Independent of
-the gameplay phases — build it whenever hand-editing `gen_content.gd` becomes painful.
+- **Fields:** id, display name, stats (HP/attack/defense/speed/tier), the boss/starter/elite flags,
+  tint, and moveset (add/remove from the existing move roster).
+- **Art linking:** a Browse/Clear row for each of the two optional per-monster art conventions —
+  portrait (`assets/portraits/<id>.png`, shown on starter cards / battle / lead-switch buttons) and
+  the new **map sprite** (`assets/map_sprites/<id>.png`, shown on a battle/elite/boss room's marker
+  in the walkable dungeon in place of the generic per-type gem — see the Run & walkable dungeon
+  section of CLAUDE.md for the pre-roll mechanism that makes this possible). Both fall back
+  gracefully when absent, same contract as the original Phase 9 portraits.
+- **Architecture:** all CRUD/validation/file-copy logic lives in plain, non-`@tool` helper classes
+  (`scripts/data/monster_repo.gd`, `move_repo.gd`, `asset_link.gd`) that are unit-tested headless
+  against scratch directories; the dock (`addons/monster_editor/monster_editor_dock.gd`) is a thin
+  UI shell over them, built in code (no `.tscn`).
+- **Caveat — not synced with `gen_content.gd`:** the dock and `tools/gen_content.gd`'s hardcoded
+  `ROSTER` table are two independent ways to write the same `assets/data/monsters/*.tres` files, not
+  a synced pair. Editing an *existing* roster monster's stats via the dock and later re-running
+  `gen_content.gd` (e.g. to rebalance a different monster) will silently overwrite that dock edit
+  back to whatever `ROSTER` says. Once the dock is your primary way of touching content, either stop
+  re-running `gen_content.gd` for monsters you've hand-tuned, or mirror the edit back into `ROSTER`.
+  New monsters created only via the dock are safe — `gen_content.gd` only writes the ids in its own
+  table, it doesn't delete anything else.
 
 ## Verification (per phase)
 
