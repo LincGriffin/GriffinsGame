@@ -11,7 +11,7 @@
 script = ExtResource("6_4gpae")
 id = "griffin"
 display_name = "The Griffin"
-max_hp = 56
+max_hp = 70
 attack = 15
 defense = 7
 speed = 9

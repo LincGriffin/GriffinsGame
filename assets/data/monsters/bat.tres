@@ -9,7 +9,7 @@
 script = ExtResource("4_02orq")
 id = "bat"
 display_name = "Cave Bat"
-max_hp = 12
+max_hp = 15
 attack = 6
 defense = 1
 speed = 8

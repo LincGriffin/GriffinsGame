@@ -10,7 +10,7 @@
 script = ExtResource("5_8y61e")
 id = "wraith"
 display_name = "Wraith"
-max_hp = 32
+max_hp = 40
 attack = 13
 defense = 5
 speed = 8

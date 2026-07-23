@@ -12,7 +12,7 @@
 script = ExtResource("7_gb6oe")
 id = "hydra"
 display_name = "The Hydra"
-max_hp = 78
+max_hp = 98
 attack = 16
 defense = 8
 speed = 6

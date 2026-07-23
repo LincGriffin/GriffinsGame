@@ -9,7 +9,7 @@
 script = ExtResource("4_mqmeg")
 id = "slime"
 display_name = "Green Slime"
-max_hp = 16
+max_hp = 20
 speed = 3
 is_starter = true
 tint = Color(0.35, 0.78, 0.35, 1)

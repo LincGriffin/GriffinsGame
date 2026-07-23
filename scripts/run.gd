@@ -7,6 +7,7 @@ extends Node
 
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
+const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 
@@ -66,10 +67,17 @@ func _ready() -> void:
 	_gs = get_node_or_null("/root/RunState")
 	if _gs == null:
 		return   # headless / test context: no live run
-	if _gs.has_living():
-		_begin_run()
-	else:
-		_show_starter_select()
+	_show_title_screen()
+
+
+func _show_title_screen() -> void:
+	var title: TitleScreen = TITLE_SCREEN.new()
+	title.started.connect(func():
+		if _gs.has_living():
+			_begin_run()
+		else:
+			_show_starter_select())
+	add_child(title)
 
 
 func _show_starter_select() -> void:

@@ -10,7 +10,7 @@
 script = ExtResource("5_nmhro")
 id = "goblin"
 display_name = "Goblin"
-max_hp = 28
+max_hp = 35
 attack = 10
 defense = 4
 speed = 6

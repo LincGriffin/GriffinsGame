@@ -9,7 +9,7 @@
 script = ExtResource("4_gcbcd")
 id = "rat"
 display_name = "Sewer Rat"
-max_hp = 16
+max_hp = 20
 attack = 7
 speed = 7
 tier = 1

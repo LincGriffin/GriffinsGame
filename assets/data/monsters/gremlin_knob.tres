@@ -11,7 +11,7 @@
 script = ExtResource("6_smljg")
 id = "gremlin_knob"
 display_name = "Gremlin Knob"
-max_hp = 42
+max_hp = 53
 attack = 14
 defense = 6
 speed = 10
