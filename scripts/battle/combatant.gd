@@ -13,6 +13,7 @@ var defense: int
 var speed: int
 var is_boss: bool = false
 var defending := false
+var atk_bonus := 0               # temporary attack buff (from "buff" moves); reset each battle/switch-in
 var source: MonsterData = null   # the static def this came from (null for make())
 var moves: Array = []            # Array[MoveData] — copied so run-time grants don't touch the resource
 
@@ -51,12 +52,12 @@ static func from_monster(m: MonsterData) -> Combatant:
 	return c
 
 
-## Pure damage formula: attack (+ the move's power) minus half the target's defense,
-## small variance, halved (rounded down) if the target is defending, never below 1.
-## Pass a seeded `rng` in tests for determinism, or null to skip variance entirely.
+## Pure damage formula: attack (+ any temporary buff + the move's power) minus half the
+## target's defense, small variance, halved (rounded down) if the target is defending,
+## never below 1. Pass a seeded `rng` in tests for determinism, or null to skip variance.
 static func compute_damage(attacker: Combatant, target: Combatant,
 		rng: RandomNumberGenerator = null, move_power: int = 0) -> int:
-	var dmg := attacker.attack + move_power - int(floor(target.defense / 2.0))
+	var dmg := attacker.attack + attacker.atk_bonus + move_power - int(floor(target.defense / 2.0))
 	if rng != null:
 		dmg += rng.randi_range(-1, 1)
 	if target.defending:

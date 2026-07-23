@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_6nx3e"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_ptq2x"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_6xrxn"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="4_lnblg"]
+[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="5_oa3g8"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="6_smljg"]
+
+[resource]
+script = ExtResource("6_smljg")
+id = "gremlin_knob"
+display_name = "Gremlin Knob"
+max_hp = 42
+attack = 14
+defense = 6
+speed = 10
+is_elite = true
+tier = 3
+tint = Color(0.8, 0.4, 0.5, 1)
+moves = Array[ExtResource("1_6nx3e")]([ExtResource("2_ptq2x"), ExtResource("3_6xrxn"), ExtResource("4_lnblg"), ExtResource("5_oa3g8")])

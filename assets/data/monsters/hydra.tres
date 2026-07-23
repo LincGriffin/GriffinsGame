@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_2n7h2"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_547np"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_1jqkr"]
+[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="4_jyvwd"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="5_hcafc"]
+[ext_resource type="Resource" path="res://assets/data/moves/mend.tres" id="6_j8eax"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="7_gb6oe"]
+
+[resource]
+script = ExtResource("7_gb6oe")
+id = "hydra"
+display_name = "The Hydra"
+max_hp = 78
+attack = 16
+defense = 8
+speed = 6
+is_boss = true
+tier = 4
+tint = Color(0.2, 0.6, 0.55, 1)
+moves = Array[ExtResource("1_2n7h2")]([ExtResource("2_547np"), ExtResource("3_1jqkr"), ExtResource("4_jyvwd"), ExtResource("5_hcafc"), ExtResource("6_j8eax")])

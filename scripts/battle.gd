@@ -135,7 +135,14 @@ func _resolve_move(mv) -> void:
 			await _enemy_turn()
 			if _state == State.ENDED: return
 			_begin_player_command()
-		_:   # attack — resolve both sides in speed order (player wins ties)
+		"buff":
+			_active.atk_bonus += mv.power
+			_update_hud()
+			await _say("%s uses %s — attack rose!" % [_active.display_name, mv.display_name])
+			await _enemy_turn()
+			if _state == State.ENDED: return
+			_begin_player_command()
+		_:   # attack / drain — resolve both sides in speed order (player wins ties)
 			if _active.speed >= _enemy.speed:
 				await _player_attack(mv)
 				if await _check_enemy_down(): return
@@ -152,29 +159,45 @@ func _resolve_move(mv) -> void:
 func _player_attack(mv) -> void:
 	var dmg := Combatant.compute_damage(_active, _enemy, _rng, mv.power)
 	_enemy.take_damage(dmg)
+	var extra := ""
+	if mv.kind == "drain":
+		var before := _active.hp
+		_active.hp = mini(_active.hp + int(floor(dmg / 2.0)), _active.max_hp)
+		var healed := _active.hp - before
+		if healed > 0:
+			extra = "  (+%d HP)" % healed
 	_update_hud()
-	await _say("%s uses %s — %d damage!" % [_active.display_name, mv.display_name, dmg])
+	await _say("%s uses %s — %d damage!%s" % [_active.display_name, mv.display_name, dmg, extra])
 
 
-## Enemy attacks the active monster with a random one of its attack moves; if that
-## monster falls, force a switch (or lose).
+## Enemy attacks the active monster with a random one of its offensive moves (attack or
+## drain); if that monster falls, force a switch (or lose).
 func _enemy_turn() -> void:
 	if not _enemy.is_alive():
 		return
-	var dmg := Combatant.compute_damage(_enemy, _active, _rng, _enemy_move_power())
+	var mv = _enemy_pick_move()
+	var power: int = mv.power if mv != null else 0
+	var dmg := Combatant.compute_damage(_enemy, _active, _rng, power)
 	_active.take_damage(dmg)
+	var drained := ""
+	if mv != null and mv.kind == "drain":
+		var before := _enemy.hp
+		_enemy.hp = mini(_enemy.hp + int(floor(dmg / 2.0)), _enemy.max_hp)
+		if _enemy.hp - before > 0:
+			drained = "  (drains %d)" % (_enemy.hp - before)
 	_update_hud()
 	var blocked := "  (blocked)" if _active.defending else ""
-	await _say("%s hits %s for %d!%s" % [_enemy.display_name, _active.display_name, dmg, blocked])
+	await _say("%s hits %s for %d!%s%s" % [_enemy.display_name, _active.display_name, dmg, blocked, drained])
 	if not _active.is_alive():
 		await _on_active_defeated()
 
 
-func _enemy_move_power() -> int:
-	var attacks := _enemy.moves.filter(func(m): return m.kind == "attack")
-	if attacks.is_empty():
-		return 0
-	return attacks[_rng.randi_range(0, attacks.size() - 1)].power
+## The enemy's offensive moves (attack or drain); null if it somehow has none.
+func _enemy_pick_move():
+	var usable := _enemy.moves.filter(func(m): return m.kind == "attack" or m.kind == "drain")
+	if usable.is_empty():
+		return null
+	return usable[_rng.randi_range(0, usable.size() - 1)]
 
 
 func _check_enemy_down() -> bool:
@@ -213,6 +236,7 @@ func _finish(result: int) -> void:
 func _set_active(c: Combatant) -> void:
 	_active = c
 	_active.defending = false
+	_active.atk_bonus = 0   # buffs never carry between battles or across a switch
 	_update_hud()
 
 

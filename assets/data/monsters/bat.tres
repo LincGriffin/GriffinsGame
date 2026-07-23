@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_62cfe"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_6sllc"]
-[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_dw8i1"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_dw8i1"]
 [ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_02orq"]
 
 [resource]

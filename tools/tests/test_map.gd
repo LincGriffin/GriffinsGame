@@ -68,6 +68,17 @@ func test_deterministic_with_same_seed() -> void:
 
 
 func test_only_known_types() -> void:
-	var allowed := ["battle", "heal", "powerup", "teleport", "room", "boss"]
+	var allowed := ["battle", "heal", "powerup", "teleport", "room", "elite", "boss"]
 	for n in _gen()["nodes"]:
 		check(allowed.has(n["type"]), "node type '%s' is known" % n["type"])
+
+
+func test_elites_gated_to_deeper_rows() -> void:
+	# Elites must never appear before MapGenerator.ELITE_MIN_ROW (the run eases in).
+	var min_row: int = MapGenerator.ELITE_MIN_ROW
+	# Sweep several seeds so we exercise many generated layouts.
+	for seed_val in [1, 7, 42, 99, 500, 2024]:
+		for n in _gen(seed_val)["nodes"]:
+			if n["type"] == "elite":
+				check(int(n["row"]) >= min_row,
+					"elite at row %d respects the min row %d" % [n["row"], min_row])

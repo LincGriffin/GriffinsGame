@@ -13,22 +13,47 @@ const MAP_VIEW := preload("res://scripts/map/map_view.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 const ROOM_SCENE := preload("res://scenes/map/room.tscn")
 
-const REGULAR_ENEMIES: Array[MonsterData] = [
+# The wild pool spans difficulty tiers 0..3; the run draws depth-appropriate monsters
+# (see _pick_wild). Starters are the three tier-0 monsters.
+const WILD_ENEMIES: Array[MonsterData] = [
+	preload("res://assets/data/monsters/chicken.tres"),
 	preload("res://assets/data/monsters/slime.tres"),
 	preload("res://assets/data/monsters/bat.tres"),
+	preload("res://assets/data/monsters/rat.tres"),
 	preload("res://assets/data/monsters/skeleton.tres"),
+	preload("res://assets/data/monsters/goblin.tres"),
+	preload("res://assets/data/monsters/spider.tres"),
+	preload("res://assets/data/monsters/golem.tres"),
+	preload("res://assets/data/monsters/wraith.tres"),
 ]
-const BOSS_ENEMY: MonsterData = preload("res://assets/data/monsters/griffin.tres")
+# The three weakest (tier 0) are offered as run-start starters.
+const STARTER_ENEMIES: Array[MonsterData] = [
+	preload("res://assets/data/monsters/chicken.tres"),
+	preload("res://assets/data/monsters/slime.tres"),
+	preload("res://assets/data/monsters/bat.tres"),
+]
+# Elite encounters — tougher fights that recruit a strong monster and heal the party.
+const ELITE_ENEMIES: Array[MonsterData] = [
+	preload("res://assets/data/monsters/gremlin_knob.tres"),
+	preload("res://assets/data/monsters/griffin.tres"),
+]
+const BOSS_ENEMY: MonsterData = preload("res://assets/data/monsters/hydra.tres")
 
 const MOVE_POOL: Array[MoveData] = [
 	preload("res://assets/data/moves/strike.tres"),
 	preload("res://assets/data/moves/heavy.tres"),
+	preload("res://assets/data/moves/slam.tres"),
 	preload("res://assets/data/moves/guard.tres"),
 	preload("res://assets/data/moves/mend.tres"),
+	preload("res://assets/data/moves/drain.tres"),
+	preload("res://assets/data/moves/focus.tres"),
 ]
 
 const POWERUP_HP := 6   # +max HP a power-up grants when no new move can be learned
 const ROOM_BONUS_HP := 5   # +max HP the treasure room grants party-wide
+
+var _wild_by_tier: Dictionary = {}   # tier:int -> Array[MonsterData]
+var _max_tier := 0
 
 var _gs: Node
 var _rng := RandomNumberGenerator.new()
@@ -46,6 +71,7 @@ var _ended := false
 
 func _ready() -> void:
 	_rng.randomize()
+	_build_wild_index()
 	_gs = get_node_or_null("/root/RunState")
 	if _gs == null:
 		return   # headless / test context: no live run
@@ -59,7 +85,7 @@ func _ready() -> void:
 
 func _show_starter_select() -> void:
 	var sel: StarterSelect = STARTER_SELECT.new()
-	sel.setup(REGULAR_ENEMIES)
+	sel.setup(STARTER_ENEMIES)
 	sel.chosen.connect(func(m):
 		_gs.new_run(m)
 		sel.queue_free()
@@ -92,7 +118,9 @@ func _on_node_selected(id: int) -> void:
 	var node: Dictionary = _map["nodes"][id]
 	match node["type"]:
 		"battle":
-			_do_battle(id, REGULAR_ENEMIES[_rng.randi_range(0, REGULAR_ENEMIES.size() - 1)])
+			_do_battle(id, _pick_wild(int(node["row"])))
+		"elite":
+			_do_battle(id, _pick_elite())
 		"boss":
 			_do_battle(id, BOSS_ENEMY)
 		"heal":
@@ -133,6 +161,8 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 				_win()
 			else:
 				_gs.add_monster(enemy)
+				if enemy.is_elite:
+					_heal_party()   # elite bonus: patch the party up after the tough fight
 				_advance(id)
 		Battle.Result.FLED:
 			_busy = false
@@ -226,8 +256,36 @@ func _knows(c, mv) -> bool:
 	return false
 
 
+## Group the wild pool by difficulty tier so encounters can scale with map depth.
+func _build_wild_index() -> void:
+	_wild_by_tier = {}
+	_max_tier = 0
+	for m in WILD_ENEMIES:
+		_max_tier = maxi(_max_tier, m.tier)
+		if not _wild_by_tier.has(m.tier):
+			_wild_by_tier[m.tier] = []
+		_wild_by_tier[m.tier].append(m)
+
+
+## Pick a wild monster whose tier suits the node's depth: deeper rows draw tougher
+## monsters, with a chance to draw one tier easier for variety.
+func _pick_wild(row: int) -> MonsterData:
+	var normal_rows: int = maxi(1, int(_map.get("rows", 7)) - 1)   # rows 0..normal_rows-1
+	var band := clampi(int(row * (_max_tier + 1) / normal_rows), 0, _max_tier)
+	if band > 0 and _rng.randf() < 0.35:
+		band -= 1
+	while band >= 0 and not _wild_by_tier.has(band):
+		band -= 1
+	var pool: Array = _wild_by_tier.get(maxi(band, 0), WILD_ENEMIES)
+	return pool[_rng.randi_range(0, pool.size() - 1)]
+
+
+func _pick_elite() -> MonsterData:
+	return ELITE_ENEMIES[_rng.randi_range(0, ELITE_ENEMIES.size() - 1)]
+
+
 func _win() -> void:
-	_show_banner("YOU WIN!\nThe Griffin is vanquished.", Color(0.9, 0.75, 0.25))
+	_show_banner("YOU WIN!\nThe Hydra is vanquished.", Color(0.9, 0.75, 0.25))
 
 
 func _game_over() -> void:

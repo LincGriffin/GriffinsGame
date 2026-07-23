@@ -14,5 +14,7 @@ extends Resource
 @export var speed: int = 5           # higher acts first in a round
 @export var is_boss: bool = false    # the final boss; defeating it wins the run
 @export var is_starter: bool = false # eligible to be offered as a run-start starter
+@export var is_elite: bool = false   # a tougher "elite" encounter (better reward on win)
+@export var tier: int = 0            # difficulty tier — wild pools scale with map depth (0 = weakest)
 @export var tint: Color = Color.WHITE   # placeholder sprite colour
 @export var moves: Array[MoveData] = []   # the monster's battle moves
