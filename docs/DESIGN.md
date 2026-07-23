@@ -221,6 +221,7 @@ skeleton with placeholder fights first — flagged.)*
 | **10** ✅ | `feat/title-and-balance` | **Title screen** (click to begin) + a **difficulty pass**: the chosen starter gets a one-time stat boost since it fights alone early on, and all monster HP runs **+25%** so an average fight lasts longer. | 1, 5 |
 | **T** ✅ | `feat/monster-editor` | **Content tooling** — an in-editor monster/enemy editor for easy add / delete / modify (see below), plus a portrait/map-sprite linker and monster-specific map markers. Independent of the gameplay phases. | — |
 | **11** ✅ | `feat/audio-scaffolding` | **Audio scaffolding** — a `SoundManager` autoload plays SFX/music by convention-based id lookup (see below), wired into movement, battle actions, node events, and menus. Ships with **zero real audio files** — fully wired but silent until sounds are dropped in. | — |
+| **12** ✅ | `feat/battle-polish` | **Feel/juice pass** — animated + color-coded HP bars, floating damage/heal numbers, hit flash + shake, a fade transition off the title screen, hover polish on buttons, and a Settings overlay (Escape, from anywhere) with SFX/Music volume sliders wired to the audio buses from Phase 11. Cosmetic only — no combat-math or turn-order changes. | 11 |
 
 ## Content tooling
 

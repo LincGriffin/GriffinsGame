@@ -10,6 +10,7 @@ signal chosen(monster: MonsterData)
 ## Preloaded rather than referenced by class_name so this compiles regardless of whether the
 ## global class cache has been rebuilt yet (same reason the generators use load()).
 const PORTRAITS := preload("res://scripts/data/portraits.gd")
+const BUTTON_POLISH := preload("res://scripts/button_polish.gd")
 
 var _options: Array = []
 var _sound: Node   # the SoundManager autoload (looked up at runtime; may be null)
@@ -55,6 +56,7 @@ func _ready() -> void:
 func _make_card(m: MonsterData) -> Control:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(210, 280)
+	BUTTON_POLISH.apply(b)
 	b.pressed.connect(func():
 		if _sound != null:
 			_sound.play_sfx("ui_select")

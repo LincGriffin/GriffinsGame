@@ -42,6 +42,7 @@ tile art did:
 | `step` | The player completes one tile of movement |
 | `blocked` | The player bumps into a wall |
 | `ui_select` | A menu click (title screen, starter-select card) |
+| `ui_hover` | The mouse enters a button (starter cards, battle command/switch buttons, Settings' Close) |
 | `encounter` | A wild or elite battle begins |
 | `encounter_boss` | The Hydra battle begins |
 | `move_attack` | The active monster uses an `attack` move |

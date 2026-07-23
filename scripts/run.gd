@@ -8,6 +8,7 @@ extends Node
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
 const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
+const SETTINGS_MENU := preload("res://scripts/settings_menu.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 
@@ -58,6 +59,8 @@ var _view = null                    # DungeonView (the walkable world)
 var _active_battle: Battle = null
 var _busy := false                  # a node is resolving (battle up, etc.)
 var _ended := false                 # run won/lost; awaiting restart
+var _settings_open := false         # the Settings overlay is up (Escape toggles it)
+var _fade_layer: CanvasLayer = null # the in-progress fade-to-black overlay, if any
 var _wild_by_tier: Dictionary = {}  # tier:int -> Array[MonsterData]
 var _max_tier := 0
 
@@ -75,12 +78,20 @@ func _ready() -> void:
 func _show_title_screen() -> void:
 	_music("title")
 	var title: TitleScreen = TITLE_SCREEN.new()
-	title.started.connect(func():
-		if _gs.has_living():
-			_begin_run()
-		else:
-			_show_starter_select())
+	title.started.connect(_on_title_started)
 	add_child(title)
+
+
+## Fade to black, swap to the next screen underneath, then fade back in — so leaving the
+## title screen isn't a hard cut. (title_screen.gd already frees itself synchronously on
+## `started`; the fade overlay just covers that moment.)
+func _on_title_started() -> void:
+	await _fade_out()
+	if _gs.has_living():
+		_begin_run()
+	else:
+		_show_starter_select()
+	await _fade_in()
 
 
 func _show_starter_select() -> void:
@@ -331,9 +342,56 @@ func _music(id: String) -> void:
 		_sound.play_music(id)
 
 
+const FADE_TIME := 0.25
+
+## Cover the screen in black. Await this before swapping content so the swap is hidden.
+func _fade_out() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 60   # above every other overlay (Settings 45, DebugOverlay 50 included)
+	var rect := ColorRect.new()
+	rect.color = Color(0, 0, 0, 0)
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_STOP   # block input while covered
+	layer.add_child(rect)
+	add_child(layer)
+	_fade_layer = layer
+	var tw := create_tween()
+	tw.tween_property(rect, "color:a", 1.0, FADE_TIME)
+	await tw.finished
+
+
+## Reveal whatever was swapped in underneath, then drop the fade overlay.
+func _fade_in() -> void:
+	if _fade_layer == null:
+		return
+	var rect: ColorRect = _fade_layer.get_child(0)
+	var tw := create_tween()
+	tw.tween_property(rect, "color:a", 0.0, FADE_TIME)
+	await tw.finished
+	_fade_layer.queue_free()
+	_fade_layer = null
+
+
+## Escape opens Settings from any screen (title, starter select, dungeon, battle). Guarded so a
+## second Escape while it's already open is a no-op here — SettingsMenu closes itself on Escape.
+func _open_settings() -> void:
+	_settings_open = true
+	if _view != null:
+		_view.set_walking(false)
+	var menu: SettingsMenu = SETTINGS_MENU.new()
+	menu.closed.connect(func():
+		_settings_open = false
+		if _view != null and not _busy:
+			_view.set_walking(true))
+	add_child(menu)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _ended and event is InputEventKey and event.pressed and not event.echo \
 			and event.keycode == KEY_R:
 		if _gs != null:
 			_gs.new_run(null)   # clear the party; _ready will prompt for a new starter
 		get_tree().reload_current_scene()
+	if not _settings_open and event is InputEventKey and event.pressed and not event.echo \
+			and event.keycode == KEY_ESCAPE:
+		_open_settings()

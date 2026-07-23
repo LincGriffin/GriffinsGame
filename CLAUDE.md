@@ -92,12 +92,30 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **Debug overlay** (`DebugOverlay` autoload, `F3`): FPS, the party (each monster's HP), battle state,
   player cell + tile data; cheats `H` (toggle hold-to-move) and `K` (set the whole party to 1 HP). It
   finds live nodes via the `player`/`battle` groups, so it works in any scene.
+- **Battle juice (Phase 12).** `_update_hud()` **tweens** each HP bar's `value` instead of
+  snapping it (`_animate_hp_bar`, `HP_TWEEN_TIME`), and tints its fill green/yellow/red by
+  remaining percentage via a **per-bar** `StyleBoxFlat` override (`_hp_styles`, created once —
+  never mutates the shared default theme resource). Damage/heal land as a **floating "±N" label**
+  (`_pop_number`) that rises and fades near the target. Taking a hit gets a brighten-flash +
+  position-jitter **shake** (`_hit_feedback`/`_shake`) — the enemy sprite for the player's own
+  attacks, just the player's HP bar (no flash — there's no player sprite to flash) for the
+  enemy's. All of this is cosmetic only; it doesn't touch combat math or turn order.
+- **`scripts/button_polish.gd`** (`ButtonPolish.apply(button)`) adds a small hover scale-up
+  tween + a `ui_hover` sound to any dynamically-created `Button` — used on starter-select cards,
+  battle's command/monster-select buttons, and Settings' Close button.
 
 ### Run & walkable dungeon
 
 - A **title screen** (`scripts/title_screen.gd`, built in code like `starter_select.gd` — no
   separate `.tscn`) opens on boot: any click dismisses it and emits `started`, and `run.gd` then
-  proceeds to starter select (fresh run) or straight into an in-progress run.
+  **fades to black and back** (`_fade_out`/`_fade_in`, `_on_title_started`) around the swap to
+  starter select (fresh run) or straight into an in-progress run, instead of a hard cut.
+- **Escape opens Settings from anywhere** (title, starter select, dungeon, battle) —
+  `run.gd::_open_settings()` adds `scripts/settings_menu.gd` (`SettingsMenu`, built in code), a
+  small overlay with an `HSlider` per audio bus (`SoundManager.SFX_BUS`/`MUSIC_BUS`) wired
+  straight to `AudioServer.set_bus_volume_db`. It pauses dungeon movement while open and restores
+  it on close (unless a battle is separately keeping it paused); closes on Escape, Close, or a
+  click outside the panel.
 - The **main scene is `scenes/map/run.tscn`** (`scripts/run.gd`). A run: pick a starter → a
   **procedurally-generated branching map** (`scripts/map/map_generator.gd`, a layered DAG that
   forks/reconnects and funnels to the Hydra) rendered as a **walkable rooms-and-corridors dungeon**
