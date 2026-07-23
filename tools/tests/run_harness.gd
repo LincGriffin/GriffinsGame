@@ -24,6 +24,7 @@ const RUN_STATE_SCRIPT := preload("res://autoload/run_state.gd")
 const RUN_SCRIPT := preload("res://scripts/run.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 const BATTLE_HARNESS := preload("res://tools/tests/battle_harness.gd")
+const RUN_HISTORY := preload("res://scripts/data/run_history.gd")
 
 var run_state = null
 var log: Array[String] = []
@@ -31,6 +32,9 @@ var won := false
 var lost := false
 var battles_fought := 0
 var nodes_resolved := 0
+var died_to := ""
+var died_at_row := -1
+var recruited: Array[String] = []
 
 var _tree: SceneTree
 var _root: Node
@@ -49,8 +53,12 @@ func _init(tree: SceneTree) -> void:
 	_run_ctrl._build_wild_index()
 
 
-## Play out one full run starting from `starter`. Stops early on a party wipe.
-func play(starter: MonsterData) -> void:
+## Play out one full run starting from `starter`. Stops early on a party wipe. Records to
+## RunHistory.SIMULATED_PATH (scripts/data/run_history.gd) unless `record_history` is false —
+## keep it on for real balance-simulation runs, turn it off for anything that shouldn't pollute
+## the log (e.g. a future automated test exercising RunHarness itself).
+func play(starter: MonsterData, record_history := true) -> void:
+	var starter_id := String(starter.id)
 	run_state.new_run(starter)
 	log.append("Starter: %s (HP %d, ATK %d)" % [
 		starter.display_name, run_state.party[0].max_hp, run_state.party[0].attack])
@@ -66,12 +74,37 @@ func play(starter: MonsterData) -> void:
 		if not run_state.has_living():
 			lost = true
 			log.append("Party already wiped — stopping before row %d." % node["row"])
-			return
+			break
 		await _resolve(node)
 		nodes_resolved += 1
 		if lost:
-			return
-	won = true
+			break
+	if not lost:
+		won = true
+	if record_history:
+		RUN_HISTORY.record(_build_record(starter_id), RUN_HISTORY.SIMULATED_PATH)
+
+
+## See scripts/data/run_history.gd for the record shape convention.
+func _build_record(starter_id: String) -> Dictionary:
+	var final_party: Array = []
+	for c in run_state.party:
+		final_party.append({
+			"id": String(c.source.id) if c.source != null else "",
+			"display_name": c.display_name,
+			"hp": c.hp,
+			"max_hp": c.max_hp,
+		})
+	return {
+		"starter_id": starter_id,
+		"outcome": "won" if won else "lost",
+		"nodes_resolved": nodes_resolved,
+		"battles_fought": battles_fought,
+		"died_to": died_to,
+		"died_at_row": died_at_row,
+		"recruited": recruited,
+		"final_party": final_party,
+	}
 
 
 func _resolve(node: Dictionary) -> void:
@@ -133,8 +166,9 @@ func _fight(node: Dictionary) -> void:
 				enemy.display_name, turns,
 				("  (%d party member(s) fainted this fight)" % fainted) if fainted > 0 else ""])
 			if not enemy.is_boss:
-				var recruited: bool = run_state.add_monster(enemy)
-				if recruited:
+				var did_recruit: bool = run_state.add_monster(enemy)
+				if did_recruit:
+					recruited.append(String(enemy.id))
 					log.append("  Recruited %s! (party now %d: %s)" % [enemy.display_name,
 						run_state.party.size(), _roster_summary()])
 				if enemy.is_elite:
@@ -142,6 +176,8 @@ func _fight(node: Dictionary) -> void:
 					log.append("  Elite bonus: party fully healed.")
 		Battle.Result.PLAYER_LOST:
 			lost = true
+			died_to = enemy.display_name
+			died_at_row = int(node["row"])
 			log.append("Row %d [%s]: lost to %s after %d turns. Run over." %
 				[node["row"], kind, enemy.display_name, turns])
 		Battle.Result.FLED:

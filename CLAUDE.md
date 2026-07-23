@@ -273,6 +273,26 @@ reinventing it.
   (recruiting, permadeath, node resolution, HP persisting across fights), not as a literal
   difficulty benchmark. Edit `STARTER_ID`/`RUNS` at the top and run it.
 
+### Run tracking
+
+**`scripts/data/run_history.gd`** (`RunHistory`) persists a summary of every finished run — one
+JSON record per run, appended to a file in `user://` (`record()`/`load_all()`/`clear()`, all
+taking an explicit `path` so tests never touch the real files). Two separate logs share the same
+record shape (`starter_id`, `outcome`, `nodes_resolved`, `battles_fought`, `died_to`,
+`died_at_row`, `recruited`, `final_party`):
+- **`RunHistory.REAL_PATH`** (`user://run_history.json`) — written by `run.gd`'s `_win()`/
+  `_game_over()` for every actual playthrough. `run.gd` tracks the needed counters as it goes
+  (`_starter_id`, `_nodes_resolved`, `_battles_fought`, `_died_to`/`_died_at_row`, `_recruited`)
+  and assembles them via `_build_run_record(outcome)`.
+- **`RunHistory.SIMULATED_PATH`** (`user://run_history_simulated.json`) — written by
+  `RunHarness.play()` (default on; pass `record_history=false` to opt out) for
+  `tools/simulate_run.gd` batches, so Monte Carlo noise never mixes with real player history.
+- **`tools/report_run_history.gd`** — reads either log (`SOURCE := "real" | "simulated"`) and
+  prints win rate, average battles/nodes, average row reached on a loss, top causes of death,
+  starters used, and most-recruited monsters. This is currently **dev-facing** (balance
+  reference); the record shape was chosen so the same log could back an in-game "Run History"
+  screen later with no format changes.
+
 ## Build / validate workflow (this machine)
 
 - **Godot binary:** `C:\Users\Dad\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe`
