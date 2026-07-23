@@ -95,6 +95,17 @@ func test_new_run_seeds_party_with_starter() -> void:
 	rs.free()
 
 
+func test_new_run_boosts_the_chosen_starter() -> void:
+	var rs := _new_run_state()
+	var slime := _slime()
+	rs.new_run(slime)
+	var c = rs.party[0]
+	check(c.max_hp > slime.max_hp, "the starter's max hp is boosted above its base data")
+	eq(c.hp, c.max_hp, "the boosted starter enters at full hp")
+	check(c.attack > slime.attack, "the starter's attack is boosted above its base data")
+	rs.free()
+
+
 func test_add_monster_respects_cap() -> void:
 	var rs := _new_run_state()
 	rs.new_run(_slime())

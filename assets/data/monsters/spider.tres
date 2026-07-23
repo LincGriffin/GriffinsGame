@@ -10,7 +10,7 @@
 script = ExtResource("5_7lprw")
 id = "spider"
 display_name = "Giant Spider"
-max_hp = 26
+max_hp = 33
 attack = 9
 defense = 3
 speed = 9

@@ -78,6 +78,10 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   drop one tier for variety). The three **tier-0** monsters (Chicken / Slime / Bat) are the fixed
   starters. **Elites** (the Griffin and Gremlin Knob) are tougher fights that, on win, recruit the
   elite **and** full-heal the party. The **Hydra** is the final boss.
+- **Difficulty tuning:** all monster HP in `gen_content.gd`'s `ROSTER` runs **+25%** over the
+  original balance pass so an average fight lasts longer. The player's **chosen starter** also gets
+  a one-time boost over its base stats (`RunState.STARTER_HP_MULT` / `STARTER_ATK_BONUS`, applied in
+  `new_run()`) since it fights alone early in the run; monsters recruited later stay at base stats.
 - **Monster portraits are optional art**, looked up by convention — `assets/portraits/<monster id>.png`
   (256×256) via `scripts/data/portraits.gd` (`Portraits.for_monster()`, memoised). Shown on the
   **starter-select cards**, as the **battle enemy art** (the monster's `tint` block becomes an 8px
@@ -91,6 +95,9 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 
 ### Run & walkable dungeon
 
+- A **title screen** (`scripts/title_screen.gd`, built in code like `starter_select.gd` — no
+  separate `.tscn`) opens on boot: any click dismisses it and emits `started`, and `run.gd` then
+  proceeds to starter select (fresh run) or straight into an in-progress run.
 - The **main scene is `scenes/map/run.tscn`** (`scripts/run.gd`). A run: pick a starter → a
   **procedurally-generated branching map** (`scripts/map/map_generator.gd`, a layered DAG that
   forks/reconnects and funnels to the Hydra) rendered as a **walkable rooms-and-corridors dungeon**

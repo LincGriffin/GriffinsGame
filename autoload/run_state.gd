@@ -9,6 +9,11 @@ signal party_changed
 
 const PARTY_CAP := 5
 
+# The player's chosen starter fights alone against a scaling wild roster early on, so it
+# gets a one-time boost over its base stats (recruits later stay at their base stats).
+const STARTER_HP_MULT := 1.3
+const STARTER_ATK_BONUS := 2
+
 ## Array[Combatant] — the run's living monsters, each carrying its current hp.
 var party: Array = []
 
@@ -18,7 +23,11 @@ var party: Array = []
 func new_run(starter: MonsterData) -> void:
 	party.clear()
 	if starter != null:
-		party.append(Combatant.from_monster(starter))
+		var c := Combatant.from_monster(starter)
+		c.max_hp = int(round(c.max_hp * STARTER_HP_MULT))
+		c.hp = c.max_hp
+		c.attack += STARTER_ATK_BONUS
+		party.append(c)
 	party_changed.emit()
 
 

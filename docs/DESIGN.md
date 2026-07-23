@@ -218,6 +218,7 @@ skeleton with placeholder fights first — flagged.)*
 | **7** ✅ | `feat/walkable-dungeon` | **Walkable dungeon traversal** — the branching map is rendered as **rooms + corridors** and walked with the keyboard (`dungeon_view.gd`), replacing the clickable node-map. Fully open & backtrackable (reach every node); node types resolve on room-entry; distinct **marker props** per type. | 2, 4 |
 | **8** ✅ | `feat/dungeon-art` | **Stained-glass tile art** — searched for CC0 packs (none matched, see below) and instead rebuilt the generated tiles at **64px** as true Magna-Tiles panels: beveled plastic frame, translucent backlit glass, specular sheen, faceted gem markers. | 4, 7 |
 | **9** ✅ | `feat/monster-portraits` | **Monster portraits** — optional per-monster art (`assets/portraits/<id>.png`, 256×256) on the starter-select cards, the battle enemy area, and the lead/switch buttons, with a **flat-tint fallback** so missing art never breaks a screen. Art is author-supplied (classic D&D monster style); the pipeline needs no generator re-run. | 1 |
+| **10** ✅ | `feat/title-and-balance` | **Title screen** (click to begin) + a **difficulty pass**: the chosen starter gets a one-time stat boost since it fights alone early on, and all monster HP runs **+25%** so an average fight lasts longer. | 1, 5 |
 | **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
 
 ## Content tooling (later)

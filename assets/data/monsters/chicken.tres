@@ -9,6 +9,7 @@
 script = ExtResource("4_tlqji")
 id = "chicken"
 display_name = "Cluckling"
+max_hp = 13
 attack = 4
 defense = 1
 speed = 6

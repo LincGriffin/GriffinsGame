@@ -9,7 +9,7 @@
 script = ExtResource("4_rrw0h")
 id = "golem"
 display_name = "Stone Golem"
-max_hp = 46
+max_hp = 58
 attack = 12
 defense = 8
 speed = 2
