@@ -34,7 +34,9 @@ func _make_player_scene() -> void:
 
 	var cam := Camera2D.new()
 	cam.name = "Camera2D"
-	cam.zoom = Vector2(2, 2)             # chunky, close-in crawler view
+	# Tiles are 64px (gen_art.gd), so zoom 1 gives the same on-screen size the old
+	# 32px-art-at-zoom-2 did — same chunky crawler view, 4x the pixel detail.
+	cam.zoom = Vector2(1, 1)
 	_attach(player, cam)
 
 	_save(player, "res://scenes/overworld/player.tscn")

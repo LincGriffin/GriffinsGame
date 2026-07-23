@@ -10,7 +10,7 @@ extends SceneTree
 ##   (4,0)..(8,0)   walkable node-marker props (heal/powerup/warp/elite/room) — walkable only
 ## Source id is fixed to 0 so scripts can reference it by a stable constant.
 
-const TILE := Vector2i(32, 32)
+const TILE := Vector2i(64, 64)   # 64px art (see gen_art.gd); camera zoom 1 keeps the on-screen scale
 const SOURCE_ID := 0
 
 func _init() -> void:
