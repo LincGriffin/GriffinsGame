@@ -105,7 +105,11 @@ duplicates, and stays consistent with "power comes from collection."
 
 - A run map is a **layered DAG** (Slay-the-Spire / FTL style): rows of nodes, edges to the next
   row, **branches that fork and reconnect**, boss at the top. **Procedurally generated each run.**
-- You may only travel to a node **connected by an edge** from your current node.
+- **Traversal is a walkable dungeon (Phase 7):** each node is a **room** and each edge a **corridor**;
+  you walk the map with the keyboard (`dungeon_view.gd`) instead of clicking nodes. The dungeon is
+  fully open and **backtrackable** — you can reach every node if you like — and a node resolves when
+  you **step into its room**. Each node type shows a distinct **marker prop**. *(The generator is
+  unchanged; only the presentation changed. The old clickable `map_view.gd` is retired.)*
 
 | Node | Effect |
 |---|---|
@@ -117,10 +121,10 @@ duplicates, and stays consistent with "power comes from collection."
 | **Elite** | Tougher fight; win recruits the elite **and** full-heals the party. Gated to deeper rows. *(Phase 5.)* |
 | **Boss** | The Hydra — final node; win = victory. |
 
-**Hybrid rooms:** the node-map is how you travel, but **treasure/rest nodes open a small walkable
-tile room** that **reuses the existing grid-movement engine** — so the movement work already built
-stays in use and adds texture. Battle/boss nodes go straight to the battle overlay;
-heal/power-up/teleport resolve on the map itself.
+**Hybrid rooms (superseded by Phase 7):** originally treasure/rest nodes opened a *separate* small
+walkable room (`room.tscn`). Now that the **whole map is walkable**, the treasure node resolves in
+place (a chest marker → party-wide +max HP); the standalone `room.tscn` is retained but unused.
+Battle/boss/elite nodes open the battle overlay; heal/power-up/teleport/treasure resolve on the map.
 
 ## Progression & persistence
 
@@ -175,6 +179,8 @@ skeleton with placeholder fights first — flagged.)*
 | **4** ✅ | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
 | **5** ✅ | `feat/content-balance` | **12-monster roster with difficulty tiers** (wild encounters scale with map depth), **new move kinds** (drain lifesteal, focus buff, slam), an **Elite node** type (recruit + heal), the **Hydra** final boss (the Griffin becomes an elite), and the **Chicken** starter. Added tests. | 2, 3 |
 | **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
+| **7** ✅ | `feat/walkable-dungeon` | **Walkable dungeon traversal** — the branching map is rendered as **rooms + corridors** and walked with the keyboard (`dungeon_view.gd`), replacing the clickable node-map. Fully open & backtrackable (reach every node); node types resolve on room-entry; distinct **marker props** per type. | 2, 4 |
+| **8** | `feat/dungeon-art` | **Real Magna-Tiles art** — source CC0/free translucent floor+wall tiles and retheme the tileset + marker props (Phase 7 ships on the generated tiles). | 4, 7 |
 | **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
 
 ## Content tooling (later)

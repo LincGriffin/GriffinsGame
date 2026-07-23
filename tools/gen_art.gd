@@ -18,9 +18,12 @@ func _init() -> void:
 	quit()
 
 
+# Tile atlas layout (all one row). 0/1 are floor/wall; 2..8 are floor + a colored gem
+# marker for each walkable node type. gen_tileset.gd mirrors these indices.
+const TILE_COUNT := 9
+
 func _make_tileset() -> void:
-	# 4 tiles in a horizontal strip: [0]=floor [1]=wall [2]=monster [3]=boss marker.
-	var img := Image.create(TILE * 4, TILE, false, Image.FORMAT_RGBA8)
+	var img := Image.create(TILE * TILE_COUNT, TILE, false, Image.FORMAT_RGBA8)
 
 	# Magna-Tiles primaries: floor = green, wall = blue. Center is a light "backlit" tint,
 	# edge is the saturated hue, and a darker same-hue border frames each tile.
@@ -32,20 +35,29 @@ func _make_tileset() -> void:
 	var wall_center := Color8(150, 194, 250)   # light backlit blue
 	var wall_border := Color8(26, 62, 140)
 
+	# Walkable node-marker gems: {index, radius, hi(center), mid(edge), lo(ring)}. Colors
+	# track map_view.gd's TYPE_COLOR so the walkable map reads the same as the old node-map.
+	var markers := [
+		{"i": 2, "r": 9.5,  "hi": Color8(255, 176, 170), "mid": Color8(224, 66, 66),  "lo": Color8(150, 28, 28)},   # battle  red
+		{"i": 3, "r": 12.0, "hi": Color8(255, 246, 196), "mid": Color8(240, 202, 60), "lo": Color8(160, 120, 20)},  # boss    gold
+		{"i": 4, "r": 10.0, "hi": Color8(200, 245, 205), "mid": Color8(74, 190, 110), "lo": Color8(30, 110, 60)},   # heal    green
+		{"i": 5, "r": 10.0, "hi": Color8(255, 245, 185), "mid": Color8(238, 208, 70), "lo": Color8(150, 120, 20)},  # powerup yellow
+		{"i": 6, "r": 10.0, "hi": Color8(200, 220, 255), "mid": Color8(80, 130, 235), "lo": Color8(30, 70, 150)},   # warp    blue
+		{"i": 7, "r": 11.0, "hi": Color8(235, 200, 245), "mid": Color8(180, 70, 200), "lo": Color8(100, 30, 120)},  # elite   purple
+		{"i": 8, "r": 10.0, "hi": Color8(255, 220, 180), "mid": Color8(240, 150, 50), "lo": Color8(150, 80, 20)},   # room    orange
+	]
+
 	for ty in range(TILE):
 		for tx in range(TILE):
 			# Tile 0 — floor
 			img.set_pixel(tx, ty, _plastic(tx, ty, floor_center, floor_edge, floor_border, 1))
 			# Tile 1 — wall (deeper border reads as solid structure)
 			img.set_pixel(TILE + tx, ty, _plastic(tx, ty, wall_center, wall_edge, wall_border, 2))
-			# Tile 2 — floor + red monster gem
-			var mc := _plastic(tx, ty, floor_center, floor_edge, floor_border, 1)
-			img.set_pixel(TILE * 2 + tx, ty, _gem(tx, ty, mc, 9.5,
-				Color8(255, 176, 170), Color8(224, 66, 66), Color8(150, 28, 28)))
-			# Tile 3 — floor + larger yellow boss gem
-			var bc := _plastic(tx, ty, floor_center, floor_edge, floor_border, 1)
-			img.set_pixel(TILE * 3 + tx, ty, _gem(tx, ty, bc, 12.0,
-				Color8(255, 246, 196), Color8(240, 202, 60), Color8(160, 120, 20)))
+			# Tiles 2..8 — floor base + a colored marker gem
+			for m in markers:
+				var base := _plastic(tx, ty, floor_center, floor_edge, floor_border, 1)
+				img.set_pixel(TILE * int(m["i"]) + tx, ty,
+					_gem(tx, ty, base, m["r"], m["hi"], m["mid"], m["lo"]))
 
 	var err := img.save_png("res://assets/tilesets/dungeon_tiles.png")
 	assert(err == OK, "failed to save dungeon_tiles.png")

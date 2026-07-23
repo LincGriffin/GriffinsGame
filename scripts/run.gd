@@ -1,17 +1,14 @@
 extends Node
-## The run controller — the game's main scene. Owns one roguelike run: pick a starter,
-## generate a branching node-map, and resolve the node you pick (battle / heal /
-## power-up / teleport / boss) until the Griffin falls (win) or the party is wiped
-## (game over → press R for a fresh run). Nothing persists between runs.
-##
-## The node-map replaces the old single walkable room as the overworld. The room engine
-## (overworld.gd / player.gd) stays in the repo for the upcoming hybrid room nodes.
+## The run controller — the game's main scene. Owns one roguelike run and renders it as a
+## WALKABLE dungeon: generate a branching map, hand it to a DungeonView (rooms + corridors),
+## and resolve a node when the player walks into its room. The whole dungeon is open and
+## backtrackable, so you can reach every node if you like. Win the boss → YOU WIN; a party
+## wipe → GAME OVER (press R for a fresh run). Nothing persists between runs.
 
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
-const MAP_VIEW := preload("res://scripts/map/map_view.gd")
+const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
-const ROOM_SCENE := preload("res://scenes/map/room.tscn")
 
 # The wild pool spans difficulty tiers 0..3; the run draws depth-appropriate monsters
 # (see _pick_wild). Starters are the three tier-0 monsters.
@@ -49,24 +46,18 @@ const MOVE_POOL: Array[MoveData] = [
 	preload("res://assets/data/moves/focus.tres"),
 ]
 
-const POWERUP_HP := 6   # +max HP a power-up grants when no new move can be learned
+const POWERUP_HP := 6      # +max HP a power-up grants when no new move can be learned
 const ROOM_BONUS_HP := 5   # +max HP the treasure room grants party-wide
-
-var _wild_by_tier: Dictionary = {}   # tier:int -> Array[MonsterData]
-var _max_tier := 0
 
 var _gs: Node
 var _rng := RandomNumberGenerator.new()
 var _map: Dictionary = {}
-var _reachable: Array = []
-var _cleared: Array = []
-var _pre_reachable: Array = []
-var _map_layer: CanvasLayer
-var _view = null
+var _view = null                    # DungeonView (the walkable world)
 var _active_battle: Battle = null
-var _active_room = null
-var _busy := false
-var _ended := false
+var _busy := false                  # a node is resolving (battle up, etc.)
+var _ended := false                 # run won/lost; awaiting restart
+var _wild_by_tier: Dictionary = {}  # tier:int -> Array[MonsterData]
+var _max_tier := 0
 
 
 func _ready() -> void:
@@ -75,8 +66,6 @@ func _ready() -> void:
 	_gs = get_node_or_null("/root/RunState")
 	if _gs == null:
 		return   # headless / test context: no live run
-	_map_layer = CanvasLayer.new()
-	add_child(_map_layer)
 	if _gs.has_living():
 		_begin_run()
 	else:
@@ -95,26 +84,21 @@ func _show_starter_select() -> void:
 
 func _begin_run() -> void:
 	_map = MAP_GENERATOR.new().generate(_rng)
-	_cleared = []
-	_reachable = _map["start_row_nodes"].duplicate()
 	_ended = false
 	_busy = false
 	if _view != null:
 		_view.queue_free()
-	_view = MAP_VIEW.new()
-	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_view.node_selected.connect(_on_node_selected)
-	_map_layer.add_child(_view)
+	_view = DUNGEON_VIEW.new()
+	_view.room_entered.connect(_enter_room)
+	add_child(_view)
 	_view.setup(_map)
-	_view.set_state(_reachable, _cleared)
 
 
-func _on_node_selected(id: int) -> void:
-	if _busy or _ended or not _reachable.has(id):
+## The player walked into an uncleared room — resolve that node.
+func _enter_room(id: int) -> void:
+	if _busy or _ended:
 		return
 	_busy = true
-	_pre_reachable = _reachable.duplicate()
-	_view.set_state([], _cleared)   # lock the map while the node resolves
 	var node: Dictionary = _map["nodes"][id]
 	match node["type"]:
 		"battle":
@@ -132,7 +116,8 @@ func _on_node_selected(id: int) -> void:
 		"teleport":
 			_teleport(id)
 		"room":
-			_open_room(id)
+			_grant_treasure()
+			_advance(id)
 		_:
 			_advance(id)
 
@@ -141,6 +126,7 @@ func _do_battle(id: int, enemy: MonsterData) -> void:
 	if not _gs.has_living():
 		_game_over()
 		return
+	_view.set_walking(false)
 	var battle := BATTLE_SCENE.instantiate()
 	battle.setup(enemy)
 	battle.finished.connect(_on_battle_finished.bind(id))
@@ -165,61 +151,51 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 					_heal_party()   # elite bonus: patch the party up after the tough fight
 				_advance(id)
 		Battle.Result.FLED:
+			# Stay put in the (uncleared) room; step out and back to re-engage.
 			_busy = false
-			_reachable = _pre_reachable   # fled — stay put and pick another node
-			_view.set_state(_reachable, _cleared)
+			_view.set_walking(true)
 
 
+## Clear a resolved room and hand movement back to the player.
 func _advance(id: int) -> void:
-	if not _cleared.has(id):
-		_cleared.append(id)
-	var node: Dictionary = _map["nodes"][id]
-	_reachable = []
-	for t in node["to"]:
-		if not _cleared.has(t):
-			_reachable.append(t)
+	_view.clear_room(id)
 	_busy = false
-	_view.set_state(_reachable, _cleared)
+	_view.set_walking(true)
 
 
 func _teleport(id: int) -> void:
-	if not _cleared.has(id):
-		_cleared.append(id)
-	var node: Dictionary = _map["nodes"][id]
-	# Jump ~2 rows ahead, but never straight onto the boss row.
-	var target_row: int = mini(int(node["row"]) + 2, int(_map["rows"]) - 2)
-	var jump: Array = []
-	for n in _map["nodes"]:
-		if n["row"] == target_row and not _cleared.has(n["id"]):
-			jump.append(n["id"])
-	if jump.is_empty():
-		for t in node["to"]:
-			if not _cleared.has(t):
-				jump.append(t)
-	_reachable = jump
+	_view.clear_room(id)
+	var target := _forward_two(id)
+	if target >= 0:
+		_view.warp_to(target)   # drop the player ~2 rows ahead to walk into that room
 	_busy = false
-	_view.set_state(_reachable, _cleared)
+	_view.set_walking(true)
 
 
-func _open_room(id: int) -> void:
-	# Hand off to a small walkable tile room; the map hides while the player walks to
-	# the chest, then the reward is applied and the run advances.
-	var room := ROOM_SCENE.instantiate()
-	room.finished.connect(_on_room_finished.bind(id))
-	add_child(room)
-	_active_room = room
-	_map_layer.visible = false
+## Follow uncleared forward edges ~2 rows ahead; -1 if there's nowhere to jump.
+func _forward_two(id: int) -> int:
+	var step1 := _uncleared(_map["nodes"][id]["to"])
+	if step1.is_empty():
+		return -1
+	var n1: int = step1[_rng.randi_range(0, step1.size() - 1)]
+	var step2 := _uncleared(_map["nodes"][n1]["to"])
+	if step2.is_empty():
+		return n1
+	return step2[_rng.randi_range(0, step2.size() - 1)]
 
 
-func _on_room_finished(id: int) -> void:
-	if _active_room != null:
-		_active_room.queue_free()
-		_active_room = null
-	_map_layer.visible = true
-	for c in _gs.party:   # treasure: a small permanent +max HP to the whole party
+func _uncleared(ids: Array) -> Array:
+	var out: Array = []
+	for t in ids:
+		if not _view.is_cleared(int(t)):
+			out.append(int(t))
+	return out
+
+
+func _grant_treasure() -> void:
+	for c in _gs.party:   # a small permanent +max HP to the whole party
 		c.max_hp += ROOM_BONUS_HP
 		c.hp += ROOM_BONUS_HP
-	_advance(id)
 
 
 func _heal_party() -> void:
@@ -285,10 +261,14 @@ func _pick_elite() -> MonsterData:
 
 
 func _win() -> void:
+	if _view != null:
+		_view.set_walking(false)
 	_show_banner("YOU WIN!\nThe Hydra is vanquished.", Color(0.9, 0.75, 0.25))
 
 
 func _game_over() -> void:
+	if _view != null:
+		_view.set_walking(false)
 	_show_banner("GAME OVER\nPress R for a new run.", Color(0.85, 0.28, 0.28))
 
 
