@@ -278,11 +278,17 @@ reinventing it.
   reset between fights (which would silently wipe recruits and re-apply the starter boost on
   every single battle).
 - **`tools/simulate_run.gd`** — a standalone tool (same `RunHarness`) that plays whole runs and
-  prints a play-by-play log plus win/loss. **Its built-in AI always attacks** — never guards,
+  prints a play-by-play log plus win/loss. **Its default AI always attacks** — never guards,
   heals, or switches proactively (only when forced by a faint) — so any win rate it reports is a
   maximally-aggressive-play **lower bound**, useful for validating the mechanics work end-to-end
   (recruiting, permadeath, node resolution, HP persisting across fights), not as a literal
-  difficulty benchmark. Edit `STARTER_ID`/`RUNS` at the top and run it.
+  difficulty benchmark. `RunHarness.play()`'s `random_moves` param (surfaced as
+  `simulate_run.gd`'s `RANDOM_MOVES` const) switches to a uniformly random pick from the active
+  monster's **full** moveset each turn instead — including guard/heal/buff/evade/reflect/stun/
+  reckless, not just attack/drain — a *different* non-strategic baseline that actually exercises
+  the newer move kinds from the player side. Empirically it does noticeably **worse** than
+  always-attack (wasted turns on situational moves add up) — expected, not a bug. Edit
+  `STARTER_ID`/`RUNS`/`RANDOM_MOVES` at the top and run it.
 
 ### Run tracking
 
