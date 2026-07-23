@@ -147,6 +147,27 @@ read like backlit plastic. Applied consistently across:
 Produced by restyling `tools/gen_art.gd` (plus new map/monster art), using the same
 headless-generator pattern already in `tools/`.
 
+### Why the art is generated, not sourced (Phase 8)
+
+We searched the usual free/CC0 sources for ready-made Magna-Tiles-style floor/wall tiles and
+**found nothing that matches**, so the tiles stay procedural. What's out there:
+
+- **Pixel-art dungeon tilesets** (e.g. [Dungeon Crawl 32x32](https://opengameart.org/content/dungeon-crawl-32x32-tiles),
+  [32x32 Dungeon Tileset](https://opengameart.org/content/32x32-dungeon-tileset)) — opaque, grungy stone; the
+  opposite of translucent plastic.
+- **Kenney's** [Abstract Platformer](https://kenney.nl/assets/abstract-platformer) — bright flat geometry (closest in
+  spirit) but **opaque** and built for side-view platformers, not top-down floor/wall.
+- **"Glass" tilesets** on itch.io — glass *tubes/pipes* and letter tiles, not glass floor panels.
+
+Useful finding from the research: the Magna-Tiles look is consistently described as **stained
+glass** — a translucent, backlit panel inside a **beveled plastic frame**. Phase 8 rebuilt
+`gen_art.gd` around exactly that (64px tiles: dark rim → beveled frame → inner lip → backlit glass
++ specular sheen, with faceted gem markers). Generated art also stays **license-clean, in-repo and
+tunable**, which sourced assets would not.
+
+*(If real assets are ever adopted, only `gen_art.gd`/`gen_tileset.gd` need to change — the atlas
+indices and `walkable` custom data are the contract.)*
+
 ---
 
 ## Architecture: mapping the design onto existing code
@@ -180,7 +201,7 @@ skeleton with placeholder fights first — flagged.)*
 | **5** ✅ | `feat/content-balance` | **12-monster roster with difficulty tiers** (wild encounters scale with map depth), **new move kinds** (drain lifesteal, focus buff, slam), an **Elite node** type (recruit + heal), the **Hydra** final boss (the Griffin becomes an elite), and the **Chicken** starter. Added tests. | 2, 3 |
 | **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
 | **7** ✅ | `feat/walkable-dungeon` | **Walkable dungeon traversal** — the branching map is rendered as **rooms + corridors** and walked with the keyboard (`dungeon_view.gd`), replacing the clickable node-map. Fully open & backtrackable (reach every node); node types resolve on room-entry; distinct **marker props** per type. | 2, 4 |
-| **8** | `feat/dungeon-art` | **Real Magna-Tiles art** — source CC0/free translucent floor+wall tiles and retheme the tileset + marker props (Phase 7 ships on the generated tiles). | 4, 7 |
+| **8** ✅ | `feat/dungeon-art` | **Stained-glass tile art** — searched for CC0 packs (none matched, see below) and instead rebuilt the generated tiles at **64px** as true Magna-Tiles panels: beveled plastic frame, translucent backlit glass, specular sheen, faceted gem markers. | 4, 7 |
 | **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
 
 ## Content tooling (later)
