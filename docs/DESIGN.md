@@ -222,6 +222,7 @@ skeleton with placeholder fights first — flagged.)*
 | **T** ✅ | `feat/monster-editor` | **Content tooling** — an in-editor monster/enemy editor for easy add / delete / modify (see below), plus a portrait/map-sprite linker and monster-specific map markers. Independent of the gameplay phases. | — |
 | **11** ✅ | `feat/audio-scaffolding` | **Audio scaffolding** — a `SoundManager` autoload plays SFX/music by convention-based id lookup (see below), wired into movement, battle actions, node events, and menus. Ships with **zero real audio files** — fully wired but silent until sounds are dropped in. | — |
 | **12** ✅ | `feat/battle-polish` | **Feel/juice pass** — animated + color-coded HP bars, floating damage/heal numbers, hit flash + shake, a fade transition off the title screen, hover polish on buttons, and a Settings overlay (Escape, from anywhere) with SFX/Music volume sliders wired to the audio buses from Phase 11. Cosmetic only — no combat-math or turn-order changes. | 11 |
+| **13** ✅ | `feat/battle-switch` | **Voluntary switching** — swap in another living monster before the active one faints (costs the turn, with a Cancel option that doesn't). **Flee hidden** behind `Battle.FLEE_ENABLED := false` for now — the mechanic is intact, just not shown. | 1 |
 
 ## Content tooling
 
