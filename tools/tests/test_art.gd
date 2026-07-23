@@ -9,7 +9,7 @@ func test_tileset_png_dimensions() -> void:
 	check(img != null, "dungeon_tiles.png loads")
 	if img == null:
 		return
-	eq(img.get_width(), 128, "tileset strip is 4 tiles (128px) wide")
+	eq(img.get_width(), 288, "tileset strip is 9 tiles (288px) wide")
 	eq(img.get_height(), 32, "tileset strip is one tile (32px) tall")
 
 

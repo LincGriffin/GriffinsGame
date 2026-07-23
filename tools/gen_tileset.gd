@@ -6,6 +6,8 @@ extends SceneTree
 ##   (0,0) floor    walkable=true,  monster=false
 ##   (1,0) wall     walkable=false, monster=false
 ##   (2,0) monster  walkable=true,  monster=true
+##   (3,0) boss     walkable=true,  monster=true, boss=true
+##   (4,0)..(8,0)   walkable node-marker props (heal/powerup/warp/elite/room) — walkable only
 ## Source id is fixed to 0 so scripts can reference it by a stable constant.
 
 const TILE := Vector2i(32, 32)
@@ -33,6 +35,9 @@ func _init() -> void:
 	src.create_tile(Vector2i(1, 0))
 	src.create_tile(Vector2i(2, 0))
 	src.create_tile(Vector2i(3, 0))
+	# Walkable node-marker tiles (heal/powerup/warp/elite/room) — see gen_art.gd.
+	for i in range(4, 9):
+		src.create_tile(Vector2i(i, 0))
 
 	ts.add_source(src, SOURCE_ID)
 
@@ -41,6 +46,10 @@ func _init() -> void:
 	_set_tile(src, Vector2i(1, 0), false,   false,  false)  # wall
 	_set_tile(src, Vector2i(2, 0), true,    true,   false)  # monster
 	_set_tile(src, Vector2i(3, 0), true,    true,   true)   # boss (also a monster tile)
+	# Marker tiles (4..8) are walkable stand-on props; the walkable dungeon maps them to
+	# nodes by cell, so they carry no monster/boss custom data.
+	for i in range(4, 9):
+		_set_tile(src, Vector2i(i, 0), true, false, false)
 
 	var err := ResourceSaver.save(ts, "res://assets/tilesets/dungeon_tileset.tres")
 	assert(err == OK, "failed to save dungeon_tileset.tres")
