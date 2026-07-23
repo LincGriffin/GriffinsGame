@@ -73,6 +73,13 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   drop one tier for variety). The three **tier-0** monsters (Chicken / Slime / Bat) are the fixed
   starters. **Elites** (the Griffin and Gremlin Knob) are tougher fights that, on win, recruit the
   elite **and** full-heal the party. The **Hydra** is the final boss.
+- **Monster portraits are optional art**, looked up by convention — `assets/portraits/<monster id>.png`
+  (256×256) via `scripts/data/portraits.gd` (`Portraits.for_monster()`, memoised). Shown on the
+  **starter-select cards**, as the **battle enemy art** (the monster's `tint` block becomes an 8px
+  frame around it), and as **thumbnails on the lead/switch buttons**. Any monster without a file
+  **falls back to its flat `tint`**, so the game runs with zero portraits present. Adding art needs
+  no generator re-run and no data edit — drop the PNG in and `--import`. See
+  `assets/portraits/README.md` for the spec and the id list.
 - **Debug overlay** (`DebugOverlay` autoload, `F3`): FPS, the party (each monster's HP), battle state,
   player cell + tile data; cheats `H` (toggle hold-to-move) and `K` (set the whole party to 1 HP). It
   finds live nodes via the `player`/`battle` groups, so it works in any scene.

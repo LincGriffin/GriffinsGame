@@ -76,6 +76,21 @@ turn state machine gains a *choose-lead* step and a *switch-on-death* transition
   stronger by collecting better monsters and grabbing power-ups, not by grinding.
 - **No XP, no levels.** Today's `GameState` XP/level system is retired.
 
+### Portraits (Phase 9)
+
+Each monster can have a **portrait** — `assets/portraits/<id>.png`, **256×256**, in a **classic
+D&D monster-manual** illustration style. Portraits are **author-supplied** (the tile art is
+generated, but bestiary illustration isn't something we can synthesise in-repo).
+
+- Shown on the **starter-select cards**, as the **battle enemy art** (the monster's `tint` block
+  becomes an 8px frame around the picture), and as **thumbnails on the lead/switch buttons**.
+- **Optional by design:** a monster with no file falls back to its flat `tint` colour, so the game
+  runs with none, some, or all of them present. Art can be added one monster at a time.
+- Looked up **by convention at runtime** (`scripts/data/portraits.gd`), so adding art needs no
+  generator re-run and no data edit — drop the PNG in and `--import`.
+
+See `assets/portraits/README.md` for the spec and the id list.
+
 ### Monster merging (later phase)
 
 With fixed-stat monsters and no XP, **merging** is the second collection-driven power lever (after
@@ -181,6 +196,7 @@ skeleton with placeholder fights first — flagged.)*
 | **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
 | **7** ✅ | `feat/walkable-dungeon` | **Walkable dungeon traversal** — the branching map is rendered as **rooms + corridors** and walked with the keyboard (`dungeon_view.gd`), replacing the clickable node-map. Fully open & backtrackable (reach every node); node types resolve on room-entry; distinct **marker props** per type. | 2, 4 |
 | **8** | `feat/dungeon-art` | **Real Magna-Tiles art** — source CC0/free translucent floor+wall tiles and retheme the tileset + marker props (Phase 7 ships on the generated tiles). | 4, 7 |
+| **9** ✅ | `feat/monster-portraits` | **Monster portraits** — optional per-monster art (`assets/portraits/<id>.png`, 256×256) on the starter-select cards, the battle enemy area, and the lead/switch buttons, with a **flat-tint fallback** so missing art never breaks a screen. Art is author-supplied (classic D&D monster style); the pipeline needs no generator re-run. | 1 |
 | **T** | `feat/monster-editor` | **Content tooling** — a monster/enemy editor for easy add / delete / modify (see below). Independent of the gameplay phases; build when content volume warrants it. | — |
 
 ## Content tooling (later)

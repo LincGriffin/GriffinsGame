@@ -16,17 +16,17 @@ corner_radius_bottom_left = 20
 shadow_color = Color(0.3, 0.45, 0.95, 0.3)
 shadow_size = 10
 
-[node name="Battle" type="CanvasLayer" unique_id=327813654]
+[node name="Battle" type="CanvasLayer" unique_id=1148999055]
 layer = 10
 script = ExtResource("1_7gynk")
 
-[node name="Background" type="ColorRect" parent="." unique_id=747065370]
+[node name="Background" type="ColorRect" parent="." unique_id=1353716325]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.04, 0.05, 0.11, 1)
 
-[node name="Stage" type="Panel" parent="." unique_id=1529542877]
+[node name="Stage" type="Panel" parent="." unique_id=2102218681]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -36,7 +36,7 @@ offset_right = -18.0
 offset_bottom = -18.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_7gynk")
 
-[node name="Panel" type="MarginContainer" parent="." unique_id=1857627509]
+[node name="Panel" type="MarginContainer" parent="." unique_id=329584313]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -45,58 +45,69 @@ theme_override_constants/margin_top = 28
 theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 28
 
-[node name="Col" type="VBoxContainer" parent="Panel" unique_id=1256335478]
+[node name="Col" type="VBoxContainer" parent="Panel" unique_id=926181939]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="EnemyName" type="Label" parent="Panel/Col" unique_id=1043545450]
+[node name="EnemyName" type="Label" parent="Panel/Col" unique_id=779703539]
 layout_mode = 2
 text = "Enemy"
 
-[node name="EnemyHP" type="ProgressBar" parent="Panel/Col" unique_id=2127206522]
+[node name="EnemyHP" type="ProgressBar" parent="Panel/Col" unique_id=1753249038]
 custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 show_percentage = false
 
-[node name="EnemyArea" type="CenterContainer" parent="Panel/Col" unique_id=25833445]
+[node name="EnemyArea" type="CenterContainer" parent="Panel/Col" unique_id=1440697350]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="EnemySprite" type="ColorRect" parent="Panel/Col/EnemyArea" unique_id=1013445102]
-custom_minimum_size = Vector2(120, 120)
+[node name="EnemySprite" type="ColorRect" parent="Panel/Col/EnemyArea" unique_id=845052914]
+custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
 
-[node name="Message" type="Label" parent="Panel/Col" unique_id=1901436769]
+[node name="Portrait" type="TextureRect" parent="Panel/Col/EnemyArea/EnemySprite" unique_id=1393374870]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Message" type="Label" parent="Panel/Col" unique_id=358694703]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Actions" type="HBoxContainer" parent="Panel/Col" unique_id=152704902]
+[node name="Actions" type="HBoxContainer" parent="Panel/Col" unique_id=1206609342]
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="Attack" type="Button" parent="Panel/Col/Actions" unique_id=1496546061]
+[node name="Attack" type="Button" parent="Panel/Col/Actions" unique_id=601877539]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "Attack"
 
-[node name="Defend" type="Button" parent="Panel/Col/Actions" unique_id=1467328949]
+[node name="Defend" type="Button" parent="Panel/Col/Actions" unique_id=942148908]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "Defend"
 
-[node name="Flee" type="Button" parent="Panel/Col/Actions" unique_id=1309950817]
+[node name="Flee" type="Button" parent="Panel/Col/Actions" unique_id=829871637]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "Flee"
 
-[node name="PlayerName" type="Label" parent="Panel/Col" unique_id=1123940222]
+[node name="PlayerName" type="Label" parent="Panel/Col" unique_id=1178790212]
 layout_mode = 2
 text = "Hero"
 
-[node name="PlayerHP" type="ProgressBar" parent="Panel/Col" unique_id=303083710]
+[node name="PlayerHP" type="ProgressBar" parent="Panel/Col" unique_id=1697345597]
 custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 show_percentage = false

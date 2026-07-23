@@ -117,11 +117,24 @@ func _make_battle_scene() -> void:
 	enemy_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_add(col, enemy_area, root)
 
+	# The enemy "sprite" is a tint-coloured block; when the monster has portrait art the
+	# Portrait child covers it, inset so the tint reads as a frame around the picture.
 	var enemy_sprite := ColorRect.new()
 	enemy_sprite.name = "EnemySprite"
-	enemy_sprite.custom_minimum_size = Vector2(120, 120)
+	enemy_sprite.custom_minimum_size = Vector2(200, 200)
 	enemy_sprite.color = Color.WHITE
 	_add(enemy_area, enemy_sprite, root)
+
+	var portrait := TextureRect.new()
+	portrait.name = "Portrait"
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_add(enemy_sprite, portrait, root)
+	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["offset_left", "offset_top"]:
+		portrait.set(side, 8)
+	for side in ["offset_right", "offset_bottom"]:
+		portrait.set(side, -8)
 
 	var message := Label.new()
 	message.name = "Message"
