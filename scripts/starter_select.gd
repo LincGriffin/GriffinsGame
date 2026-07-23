@@ -12,6 +12,7 @@ signal chosen(monster: MonsterData)
 const PORTRAITS := preload("res://scripts/data/portraits.gd")
 
 var _options: Array = []
+var _sound: Node   # the SoundManager autoload (looked up at runtime; may be null)
 
 
 ## Call before adding to the tree.
@@ -21,6 +22,7 @@ func setup(options: Array) -> void:
 
 func _ready() -> void:
 	layer = 30
+	_sound = get_node_or_null("/root/SoundManager")
 
 	var dim := ColorRect.new()
 	dim.color = Color(0.05, 0.06, 0.09, 0.94)
@@ -53,7 +55,10 @@ func _ready() -> void:
 func _make_card(m: MonsterData) -> Control:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(210, 280)
-	b.pressed.connect(func(): chosen.emit(m))
+	b.pressed.connect(func():
+		if _sound != null:
+			_sound.play_sfx("ui_select")
+		chosen.emit(m))
 
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE

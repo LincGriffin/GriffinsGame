@@ -220,6 +220,7 @@ skeleton with placeholder fights first — flagged.)*
 | **9** ✅ | `feat/monster-portraits` | **Monster portraits** — optional per-monster art (`assets/portraits/<id>.png`, 256×256) on the starter-select cards, the battle enemy area, and the lead/switch buttons, with a **flat-tint fallback** so missing art never breaks a screen. Art is author-supplied (classic D&D monster style); the pipeline needs no generator re-run. | 1 |
 | **10** ✅ | `feat/title-and-balance` | **Title screen** (click to begin) + a **difficulty pass**: the chosen starter gets a one-time stat boost since it fights alone early on, and all monster HP runs **+25%** so an average fight lasts longer. | 1, 5 |
 | **T** ✅ | `feat/monster-editor` | **Content tooling** — an in-editor monster/enemy editor for easy add / delete / modify (see below), plus a portrait/map-sprite linker and monster-specific map markers. Independent of the gameplay phases. | — |
+| **11** ✅ | `feat/audio-scaffolding` | **Audio scaffolding** — a `SoundManager` autoload plays SFX/music by convention-based id lookup (see below), wired into movement, battle actions, node events, and menus. Ships with **zero real audio files** — fully wired but silent until sounds are dropped in. | — |
 
 ## Content tooling
 
@@ -248,6 +249,20 @@ duplicating, editing, and deleting roster monsters without hand-editing `tools/g
   re-running `gen_content.gd` for monsters you've hand-tuned, or mirror the edit back into `ROSTER`.
   New monsters created only via the dock are safe — `gen_content.gd` only writes the ids in its own
   table, it doesn't delete anything else.
+
+## Audio
+
+**`SoundManager`** (autoload) plays SFX and music by **convention-based id lookup** —
+`assets/audio/{sfx,music}/<id>.{ogg,wav,mp3}`, via `scripts/data/sfx_library.gd` /
+`music_library.gd` — the same optional-art shape as `Portraits`/`MapSprites`: a missing id is a
+silent no-op, so the game runs (silently) with zero audio files present. This is the state the
+repo ships in as of Phase 11 — every meaningful moment already calls into the sound system, but
+no real sound files exist yet. Adding one is purely dropping a file at the right path; no code or
+data changes, no generator to re-run. See `assets/audio/README.md` for the full id vocabulary
+(movement, battle moves, node events, menus, four music tracks) and the file spec (format, sample
+rate, length, size, loudness). `SoundManager.play_sfx()`/`play_music()` are reached via
+`get_node_or_null("/root/SoundManager")` from every call site, same reasoning as `RunState` —
+generators and headless tests never depend on autoload registration order.
 
 ## Verification (per phase)
 

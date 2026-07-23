@@ -26,7 +26,7 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **Tile size is 64px** and the player `Camera2D` is at **zoom 1** — together these render the same
   on-screen size the old 32px-at-zoom-2 art did, with 4× the pixel detail. Changing one without the
   other rescales the whole game.
-- `autoload/` — singletons (none yet).
+- `autoload/` — singletons: `RunState`, `SoundManager`, `DebugOverlay`.
 - `tools/` — reproducible **generator scripts** (see below). Not shipped in gameplay.
 
 ## Architecture notes (keep these consistent)
@@ -161,6 +161,32 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   without waiting on a filesystem rescan; the dock still triggers
   `EditorInterface.get_resource_filesystem().scan()` afterward so the game's own `load()`-based
   lookups (`Portraits`/`MapSprites`) pick up the new file too.
+
+### Audio
+
+- **`SoundManager`** (autoload) plays SFX and music by **convention-based id lookup** — same
+  optional-art shape as `Portraits`/`MapSprites`: `scripts/data/sfx_library.gd` /
+  `music_library.gd` look under `assets/audio/{sfx,music}/<id>.{ogg,wav,mp3}` (memoised, tries
+  all three extensions), and a missing id is always a **silent no-op**. The repo currently ships
+  with **zero real audio files** — the game is fully wired but silent until files are dropped in;
+  see `assets/audio/README.md` for the id vocabulary and file spec. Adding a sound is purely
+  "drop a file at the right path," no code or data changes.
+- **API:** `SoundManager.play_sfx(id)` (round-robins across a small pool of `AudioStreamPlayer`s
+  on an `"SFX"` bus so overlapping sounds don't cut each other off) and
+  `SoundManager.play_music(id)` (one `AudioStreamPlayer` on a `"Music"` bus; re-requesting the
+  current track is a no-op; loops itself via the player's `finished` signal rather than each
+  file's own loop metadata, so any dropped-in file loops with zero import fiddling).
+  `stop_music()` is also available. Both audio buses are created at runtime in `_ready()`
+  (idempotent), not via a generated bus-layout resource.
+- **Reached via `get_node_or_null("/root/SoundManager")`**, same reasoning as `RunState` — every
+  call site (`player.gd`, `battle.gd`, `run.gd`, `starter_select.gd`, `title_screen.gd`) is
+  null-guarded through a private `_sfx(id)`/`_music(id)` wrapper, so headless tests that build
+  scenes standalone (no autoloads registered) stay green with the manager absent.
+- **Hook points:** `player.gd` → `step` / `blocked` per move attempt. `battle.gd` → battle music
+  on `_ready`, `encounter`/`encounter_boss` on intro, `move_<kind>` per move used (1:1 with
+  `MoveData.kind`), `enemy_hit`, `faint`, `victory`, `defeat`, `flee`. `run.gd` → `title`/`dungeon`
+  music, `node_heal`/`node_powerup`/`node_room`/`node_teleport` per node type, `win`/`lose`.
+  `starter_select.gd`/`title_screen.gd` → `ui_select` on a card/dismiss click.
 
 ## Build / validate workflow (this machine)
 

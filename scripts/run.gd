@@ -51,6 +51,7 @@ const POWERUP_HP := 6      # +max HP a power-up grants when no new move can be l
 const ROOM_BONUS_HP := 5   # +max HP the treasure room grants party-wide
 
 var _gs: Node
+var _sound: Node   # the SoundManager autoload (looked up at runtime; may be null)
 var _rng := RandomNumberGenerator.new()
 var _map: Dictionary = {}
 var _view = null                    # DungeonView (the walkable world)
@@ -67,10 +68,12 @@ func _ready() -> void:
 	_gs = get_node_or_null("/root/RunState")
 	if _gs == null:
 		return   # headless / test context: no live run
+	_sound = get_node_or_null("/root/SoundManager")
 	_show_title_screen()
 
 
 func _show_title_screen() -> void:
+	_music("title")
 	var title: TitleScreen = TITLE_SCREEN.new()
 	title.started.connect(func():
 		if _gs.has_living():
@@ -91,6 +94,7 @@ func _show_starter_select() -> void:
 
 
 func _begin_run() -> void:
+	_music("dungeon")
 	_map = MAP_GENERATOR.new().generate(_rng)
 	_assign_encounters()
 	_ended = false
@@ -127,14 +131,18 @@ func _enter_room(id: int) -> void:
 		"battle", "elite", "boss":
 			_do_battle(id, node["enemy"])
 		"heal":
+			_sfx("node_heal")
 			_heal_party()
 			_advance(id)
 		"powerup":
+			_sfx("node_powerup")
 			_apply_powerup()
 			_advance(id)
 		"teleport":
+			_sfx("node_teleport")
 			_teleport(id)
 		"room":
+			_sfx("node_room")
 			_grant_treasure()
 			_advance(id)
 		_:
@@ -280,12 +288,14 @@ func _pick_elite() -> MonsterData:
 
 
 func _win() -> void:
+	_sfx("win")
 	if _view != null:
 		_view.set_walking(false)
 	_show_banner("YOU WIN!\nThe Hydra is vanquished.", Color(0.9, 0.75, 0.25))
 
 
 func _game_over() -> void:
+	_sfx("lose")
 	if _view != null:
 		_view.set_walking(false)
 	_show_banner("GAME OVER\nPress R for a new run.", Color(0.85, 0.28, 0.28))
@@ -309,6 +319,16 @@ func _show_banner(text: String, color: Color) -> void:
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.add_child(label)
 	add_child(layer)
+
+
+func _sfx(id: String) -> void:
+	if _sound != null:
+		_sound.play_sfx(id)
+
+
+func _music(id: String) -> void:
+	if _sound != null:
+		_sound.play_music(id)
 
 
 func _unhandled_input(event: InputEvent) -> void:

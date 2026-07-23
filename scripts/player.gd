@@ -25,6 +25,7 @@ signal move_blocked(cell: Vector2i)
 
 var grid_cell := Vector2i.ZERO
 var is_moving := false
+var _sound: Node   # SoundManager autoload, looked up at runtime; null in headless/test contexts
 
 # Iteration order sets input priority when two directions are held at once.
 const DIRECTIONS := {
@@ -37,6 +38,7 @@ const DIRECTIONS := {
 
 func _ready() -> void:
 	add_to_group("player")   # so the debug overlay can find the player in any scene
+	_sound = get_node_or_null("/root/SoundManager")
 
 
 func _physics_process(_delta: float) -> void:
@@ -68,6 +70,7 @@ func _try_step(dir: Vector2i) -> void:
 	var target := grid_cell + dir
 	if not _is_walkable(target):
 		move_blocked.emit(target)
+		_sfx("blocked")
 		return
 
 	is_moving = true
@@ -77,6 +80,12 @@ func _try_step(dir: Vector2i) -> void:
 	await tween.finished
 	is_moving = false
 	moved.emit(grid_cell)
+	_sfx("step")
+
+
+func _sfx(id: String) -> void:
+	if _sound != null:
+		_sound.play_sfx(id)
 
 
 ## A cell is walkable only if it holds a tile whose "walkable" custom data is true.
