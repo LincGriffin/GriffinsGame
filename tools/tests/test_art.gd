@@ -9,8 +9,8 @@ func test_tileset_png_dimensions() -> void:
 	check(img != null, "dungeon_tiles.png loads")
 	if img == null:
 		return
-	eq(img.get_width(), 288, "tileset strip is 9 tiles (288px) wide")
-	eq(img.get_height(), 32, "tileset strip is one tile (32px) tall")
+	eq(img.get_width(), 576, "tileset strip is 9 tiles (576px) wide")
+	eq(img.get_height(), 64, "tileset strip is one tile (64px) tall")
 
 
 func test_player_sprite_is_a_gem_on_transparency() -> void:
@@ -19,11 +19,11 @@ func test_player_sprite_is_a_gem_on_transparency() -> void:
 	check(img != null, "player.png loads")
 	if img == null:
 		return
-	eq(img.get_width(), 32, "player sprite is 32px wide")
-	eq(img.get_height(), 32, "player sprite is 32px tall")
+	eq(img.get_width(), 64, "player sprite is 64px wide")
+	eq(img.get_height(), 64, "player sprite is 64px tall")
 	# A gem on transparent backing: the corners are clear, the center is opaque.
 	check(img.get_pixel(0, 0).a == 0.0, "corner pixel is transparent")
-	check(img.get_pixel(16, 16).a > 0.5, "center pixel is opaque (the gem body)")
+	check(img.get_pixel(32, 32).a > 0.5, "center pixel is opaque (the gem body)")
 
 
 func test_map_view_styles_each_node_type() -> void:

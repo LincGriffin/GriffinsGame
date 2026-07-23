@@ -8,7 +8,7 @@ extends CharacterBody2D
 ## TileMapLayer's "walkable" custom data, NOT physics, so there is never a
 ## partial-tile or sliding state (we deliberately don't call move_and_slide).
 
-const TILE_SIZE := 32          # kept for reference; positioning uses map_to_local
+const TILE_SIZE := 64          # kept for reference; positioning uses map_to_local
 const MOVE_TIME := 0.12        # seconds to glide one tile
 
 ## Injected by the Overworld so the player can ask the map what's walkable.
