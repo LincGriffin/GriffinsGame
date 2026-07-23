@@ -19,6 +19,10 @@ signal _choice_made(monster: Combatant)   # internal: a monster-select button wa
 const STEP := 0.7   # seconds between battle messages (pacing)
 const FLEE_CHANCE := 0.5
 
+## Preloaded rather than referenced by class_name so this compiles regardless of whether the
+## global class cache has been rebuilt yet (same reason the generators use load()).
+const PORTRAITS := preload("res://scripts/data/portraits.gd")
+
 var _enemy_data: MonsterData
 var _party: Array = []        # Array[Combatant] — the run's monsters (shared with RunState)
 var _active: Combatant = null # the monster currently fighting
@@ -31,6 +35,7 @@ var _dynamic_buttons: Array = []   # command / monster-select buttons created on
 @onready var _enemy_name: Label = $Panel/Col/EnemyName
 @onready var _enemy_hp: ProgressBar = $Panel/Col/EnemyHP
 @onready var _enemy_sprite: ColorRect = $Panel/Col/EnemyArea/EnemySprite
+@onready var _enemy_portrait: TextureRect = $Panel/Col/EnemyArea/EnemySprite/Portrait
 @onready var _message: Label = $Panel/Col/Message
 @onready var _actions: HBoxContainer = $Panel/Col/Actions
 @onready var _player_name: Label = $Panel/Col/PlayerName
@@ -48,7 +53,12 @@ func _ready() -> void:
 	_gs = get_node("/root/RunState")
 
 	_enemy = Combatant.from_monster(_enemy_data)
+	# Portrait art covers the tint block when this monster has some; otherwise the flat
+	# tint block stands in, so a missing portrait is never a broken screen.
 	_enemy_sprite.color = _enemy_data.tint
+	var art := PORTRAITS.for_monster(_enemy_data)
+	_enemy_portrait.texture = art
+	_enemy_portrait.visible = art != null
 	_party = _gs.living()   # shared Combatant refs → damage persists between fights
 
 	# The scene ships with placeholder Attack/Defend/Flee buttons; the command menu is
@@ -244,11 +254,16 @@ func _living_party() -> Array:
 	return _party.filter(func(c): return c.is_alive())
 
 
-func _add_button(text: String, cb: Callable) -> void:
+## Add a command button. Monster-select buttons pass their portrait as `icon` so you can
+## see who you're sending in; move buttons pass none.
+func _add_button(text: String, cb: Callable, icon: Texture2D = null) -> void:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(130, 40)
+	b.custom_minimum_size = Vector2(130, 40) if icon == null else Vector2(176, 84)
 	b.focus_mode = Control.FOCUS_NONE
+	if icon != null:
+		b.icon = icon
+		b.expand_icon = true   # scale the 256px portrait down into the button
 	b.pressed.connect(cb)
 	_actions.add_child(b)
 	_dynamic_buttons.append(b)
@@ -258,7 +273,8 @@ func _add_button(text: String, cb: Callable) -> void:
 func _prompt_monster(options: Array) -> Combatant:
 	_clear_dynamic_buttons()
 	for c in options:
-		_add_button("%s  (%d/%d)" % [c.display_name, c.hp, c.max_hp], func(): _choice_made.emit(c))
+		_add_button("%s  (%d/%d)" % [c.display_name, c.hp, c.max_hp],
+			func(): _choice_made.emit(c), PORTRAITS.for_monster(c.source))
 	var chosen: Combatant = await _choice_made
 	_clear_dynamic_buttons()
 	return chosen
