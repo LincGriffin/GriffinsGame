@@ -23,16 +23,16 @@ func after_each() -> void:
 	h.teardown()
 
 
-func _move(id: String, power: int) -> MoveData:
+func _move(id: String, kind: String, power: int) -> MoveData:
 	var mv: MoveData = MOVE_SCRIPT.new()
 	mv.id = id
 	mv.display_name = id.capitalize()
-	mv.kind = "attack"
+	mv.kind = kind
 	mv.power = power
 	return mv
 
 
-func _monster(id: String, hp: int, atk: int, def: int, spd: int, mv: MoveData) -> MonsterData:
+func _monster(id: String, hp: int, atk: int, def: int, spd: int, moves: Array) -> MonsterData:
 	var m: MonsterData = MONSTER_SCRIPT.new()
 	m.id = id
 	m.display_name = id.capitalize()
@@ -40,21 +40,30 @@ func _monster(id: String, hp: int, atk: int, def: int, spd: int, mv: MoveData) -
 	m.attack = atk
 	m.defense = def
 	m.speed = spd
-	var moves: Array[MoveData] = [mv]
-	m.moves = moves
+	var typed: Array[MoveData] = []
+	for mv in moves:
+		typed.append(mv)
+	m.moves = typed
 	return m
 
 
 func _weak(id: String) -> MonsterData:
-	return _monster(id, 1, 1, 0, 1, _move("poke", 1))
+	return _monster(id, 1, 1, 0, 1, [_move("poke", "attack", 1)])
 
 
 func _tank(id: String) -> MonsterData:
-	return _monster(id, 100, 10, 20, 5, _move("hit", 5))
+	return _monster(id, 100, 10, 20, 5, [_move("hit", "attack", 5)])
 
 
 func _brute(id: String) -> MonsterData:
-	return _monster(id, 50, 10, 0, 10, _move("smash", 5))
+	return _monster(id, 50, 10, 0, 10, [_move("smash", "attack", 5)])
+
+
+## A fast (spd 20 — always outspeeds _brute) 100-hp monster with one basic attack plus the one
+## new-kind move under test, so its own turn always resolves before the enemy's follow-up.
+func _specialist(id: String, extra_kind: String, extra_id: String, extra_power: int) -> MonsterData:
+	return _monster(id, 100, 10, 0, 20,
+		[_move("hit", "attack", 5), _move(extra_id, extra_kind, extra_power)])
 
 
 func test_attack_defeats_a_weak_enemy_and_wins() -> void:
@@ -120,3 +129,41 @@ func _button_texts() -> Array:
 		if c is Button:
 			out.append(c.text)
 	return out
+
+
+func test_evade_negates_the_next_hit() -> void:
+	await h.start([_specialist("dodger", "evade", "dodge", 0)], _brute("ogre"))
+	await h.use_move("dodge")
+	check(not h.is_finished, "evading doesn't end the battle")
+	eq(h.run_state.party[0].hp, h.run_state.party[0].max_hp,
+		"the evading monster takes 0 damage from the enemy's follow-up attack")
+
+
+func test_reflect_redirects_damage_to_the_attacker() -> void:
+	await h.start([_specialist("mirror_mon", "reflect", "bounce", 0)], _brute("ogre"))
+	await h.use_move("bounce")
+	check(not h.is_finished, "reflecting doesn't end the battle — the brute survives the redirect")
+	eq(h.run_state.party[0].hp, h.run_state.party[0].max_hp,
+		"the reflecting monster takes 0 damage — it goes to the attacker instead")
+	check(h.battle._enemy.hp < h.battle._enemy.max_hp,
+		"the enemy takes its own attack's damage back")
+
+
+func test_stun_skips_the_stunned_sides_next_turn() -> void:
+	# The stunner outspeeds the brute, so its stun lands before the brute's own turn — which
+	# should then be skipped entirely, leaving the stunner's HP untouched this round.
+	await h.start([_specialist("zapper", "stun", "zap", 4)], _brute("ogre"))
+	await h.use_move("zap")
+	check(not h.is_finished, "stunning doesn't end the battle")
+	check(h.battle._enemy.hp < h.battle._enemy.max_hp, "the stun attack itself still deals damage")
+	eq(h.run_state.party[0].hp, h.run_state.party[0].max_hp,
+		"the stunned enemy's turn is skipped, so the stunner takes no counter-damage")
+
+
+func test_reckless_damages_both_sides() -> void:
+	await h.start([_specialist("berserker", "reckless", "wild", 14)], _weak("mite"))
+	await h.use_move("wild")
+	check(h.is_finished, "a reckless hit still one-shots a 1-hp enemy")
+	eq(h.result, Battle.Result.PLAYER_WON, "the enemy goes down despite the user's own recoil")
+	check(h.run_state.party[0].hp < h.run_state.party[0].max_hp,
+		"the user still takes recoil damage even though the enemy was defeated")

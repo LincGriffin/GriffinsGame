@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_6nx3e"]
-[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_ptq2x"]
-[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_6xrxn"]
-[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="4_lnblg"]
-[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="5_oa3g8"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="6_smljg"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_ptq2x"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_6xrxn"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_lnblg"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="4_oa3g8"]
+[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="5_smljg"]
+[ext_resource type="Resource" path="res://assets/data/moves/shock.tres" id="6_x655u"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="7_n6icb"]
 
 [resource]
-script = ExtResource("6_smljg")
+script = ExtResource("7_n6icb")
 id = "gremlin_knob"
 display_name = "Gremlin Knob"
 max_hp = 53
@@ -18,4 +19,4 @@ speed = 10
 is_elite = true
 tier = 3
 tint = Color(0.8, 0.4, 0.5, 1)
-moves = Array[ExtResource("1_6nx3e")]([ExtResource("2_ptq2x"), ExtResource("3_6xrxn"), ExtResource("4_lnblg"), ExtResource("5_oa3g8")])
+moves = Array[ExtResource("1_ptq2x")]([ExtResource("2_6xrxn"), ExtResource("3_lnblg"), ExtResource("4_oa3g8"), ExtResource("5_smljg"), ExtResource("6_x655u")])

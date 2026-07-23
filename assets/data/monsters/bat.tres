@@ -1,12 +1,13 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_62cfe"]
-[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_6sllc"]
-[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_dw8i1"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_02orq"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_6sllc"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_dw8i1"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_02orq"]
+[ext_resource type="Resource" path="res://assets/data/moves/evade.tres" id="4_g3cw3"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_pfvom"]
 
 [resource]
-script = ExtResource("4_02orq")
+script = ExtResource("5_pfvom")
 id = "bat"
 display_name = "Cave Bat"
 max_hp = 15
@@ -15,4 +16,4 @@ defense = 1
 speed = 8
 is_starter = true
 tint = Color(0.59, 0.43, 0.78, 1)
-moves = Array[ExtResource("1_62cfe")]([ExtResource("2_6sllc"), ExtResource("3_dw8i1")])
+moves = Array[ExtResource("1_6sllc")]([ExtResource("2_dw8i1"), ExtResource("3_02orq"), ExtResource("4_g3cw3")])

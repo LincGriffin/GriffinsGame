@@ -58,9 +58,20 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   The command menu lists the active monster's **moves**, a **Switch** command (shown whenever another
   living monster is available), and Flee — **currently hidden** behind `Battle.FLEE_ENABLED := false`
   (flip it back on to restore it; `_on_flee`/`FLEE_CHANCE`/its sfx hook are all still intact). Move
-  **kinds** (data-driven, effect not element): `attack`, `guard` (halve next hit), `heal`, `drain`
-  (attack that heals the user half the damage), and `buff` (raise the user's `atk_bonus` for the
-  battle; reset on switch-in). Enemies pick a random offensive (attack/drain) move each turn.
+  **kinds** (data-driven, effect not element): `attack`, `guard` (halve next hit), `evade` (the
+  next hit deals 0 damage), `reflect` (the next hit is redirected to its attacker instead), `heal`,
+  `drain` (attack that heals the user half the damage), `buff` (raise the user's `atk_bonus` for
+  the battle; reset on switch-in), `stun` (an attack that also skips the target's next turn), and
+  `reckless` (a heavy attack that also damages its own user — `floor(dmg/4)`, min 1). `guard` /
+  `evade` / `reflect` are one-shot stances: set on cast, consumed by the very next incoming hit (or
+  expire — cleared alongside `defending` whenever the command menu comes back up), and evaded/
+  reflected hits skip every secondary effect (no drain-heal, no stun, no recoil) — only the
+  0-damage/redirect itself happens. `stunned` is different: inflicted BY an opponent's `stun` move,
+  checked and cleared at the start of the stunned side's own next turn (`_begin_player_command`/
+  `_enemy_turn`), skipping it entirely — this can land mid-round (if the stunning side is faster)
+  or next round (if slower), whichever the natural turn order produces. Enemies pick a random
+  offensive move each turn from `attack`/`drain`/`stun`/`reckless` (never the defensive kinds —
+  same simplification as guard/heal/buff, which enemies also never use).
 - **Voluntary switching** (`_on_switch`, alongside the forced switch-on-faint): choose another
   living monster to lead with **before** the active one dies. Costs the turn — the enemy still
   acts — same as guard/heal/buff. The monster-select prompt (`_prompt_monster`) grew an

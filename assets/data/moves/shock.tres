@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_m4avk"]
+
+[resource]
+script = ExtResource("1_m4avk")
+id = "shock"
+display_name = "Shock"
+kind = "stun"
+power = 4
+description = "A jolting strike — the target reels and can't act next turn."

@@ -5,9 +5,12 @@ extends CanvasLayer
 ## one leads, and when it falls you switch in another. A downed monster is permadead for
 ## the run. You lose only when the whole party is wiped.
 ##
-## The command menu lists the active monster's MOVES (plus Flee vs non-boss). A move is
-## an attack (damage = attack + power - def/2), a guard (halve the incoming hit), or a
-## heal (restore HP). HP persists automatically — the party Combatants are shared with
+## The command menu lists the active monster's MOVES (plus Flee vs non-boss). Move kinds:
+## attack (damage = attack + power - def/2), drain (attack that heals half the damage dealt),
+## guard (halve the incoming hit), evade (the next hit deals 0 damage), reflect (the next hit is
+## redirected to its attacker instead), heal (restore HP), buff (raise attack for the battle),
+## stun (an attack that also skips the target's next turn), and reckless (a heavy attack that
+## also damages its own user). HP persists automatically — the party Combatants are shared with
 ## RunState.
 
 enum Result { PLAYER_WON, PLAYER_LOST, FLED }
@@ -116,15 +119,33 @@ func _choose_lead() -> void:
 		_message.text = "Choose your lead monster!"
 		var chosen: Combatant = await _prompt_monster(options)
 		_set_active(chosen)
-	_begin_player_command()
+	await _begin_player_command()
 
 
 func _begin_player_command() -> void:
+	if _active.stunned:
+		_active.stunned = false
+		await _say("%s is stunned and can't move!" % _active.display_name)
+		await _end_player_turn()
+		return
 	_state = State.PLAYER_COMMAND
 	_active.defending = false
+	_active.evading = false
+	_active.reflecting = false
 	_message.text = "What will %s do?" % _active.display_name
 	_build_command_buttons()
 	command_ready.emit()
+
+
+## After a move that doesn't itself fight (guard/heal/buff/reflect/evade/switch/failed-flee/
+## stunned-skip), hand the turn to the enemy and either continue or end the battle. The extra
+## _check_enemy_down() covers a reflected hit killing the enemy on the enemy's own turn — a
+## no-op for every other (never self-damaging) enemy turn.
+func _end_player_turn() -> void:
+	await _enemy_turn()
+	if _state == State.ENDED: return
+	if await _check_enemy_down(): return
+	await _begin_player_command()
 
 
 ## One button per move on the active monster, plus Switch (if another monster can take over)
@@ -160,14 +181,12 @@ func _on_switch() -> void:
 	_message.text = "Switch to which monster?"
 	var next: Combatant = await _prompt_monster(options, true)
 	if next == null:
-		_begin_player_command()   # cancelled — no turn spent
+		await _begin_player_command()   # cancelled — no turn spent
 		return
 	_sfx("switch")
 	_set_active(next)
 	await _say("%s steps in!" % next.display_name)
-	await _enemy_turn()
-	if _state == State.ENDED: return
-	_begin_player_command()
+	await _end_player_turn()
 
 
 func _on_flee() -> void:
@@ -181,9 +200,7 @@ func _on_flee() -> void:
 		_finish(Result.FLED)
 		return
 	await _say("You couldn't escape!")
-	await _enemy_turn()
-	if _state == State.ENDED: return
-	_begin_player_command()
+	await _end_player_turn()
 
 
 func _resolve_move(mv) -> void:
@@ -192,9 +209,17 @@ func _resolve_move(mv) -> void:
 			_sfx("move_guard")
 			_active.defending = true
 			await _say("%s guards." % _active.display_name)
-			await _enemy_turn()
-			if _state == State.ENDED: return
-			_begin_player_command()
+			await _end_player_turn()
+		"evade":
+			_sfx("move_evade")
+			_active.evading = true
+			await _say("%s prepares to evade!" % _active.display_name)
+			await _end_player_turn()
+		"reflect":
+			_sfx("move_reflect")
+			_active.reflecting = true
+			await _say("%s readies a reflect!" % _active.display_name)
+			await _end_player_turn()
 		"heal":
 			_sfx("move_heal")
 			var before := _active.hp
@@ -204,79 +229,134 @@ func _resolve_move(mv) -> void:
 			if healed > 0:
 				_pop_number(_player_hp, "+%d" % healed, HEAL_COLOR)
 			await _say("%s mends %d HP." % [_active.display_name, healed])
-			await _enemy_turn()
-			if _state == State.ENDED: return
-			_begin_player_command()
+			await _end_player_turn()
 		"buff":
 			_sfx("move_buff")
 			_active.atk_bonus += mv.power
 			_update_hud()
 			await _say("%s uses %s — attack rose!" % [_active.display_name, mv.display_name])
-			await _enemy_turn()
-			if _state == State.ENDED: return
-			_begin_player_command()
-		_:   # attack / drain — resolve both sides in speed order (player wins ties)
+			await _end_player_turn()
+		_:   # attack / drain / stun / reckless — resolve both sides in speed order (player wins ties)
 			if _active.speed >= _enemy.speed:
 				await _player_attack(mv)
 				if await _check_enemy_down(): return
 				await _enemy_turn()
 				if _state == State.ENDED: return
+				if await _check_enemy_down(): return
 			else:
 				await _enemy_turn()
 				if _state == State.ENDED: return
+				if await _check_enemy_down(): return
 				await _player_attack(mv)
 				if await _check_enemy_down(): return
-			_begin_player_command()
+			await _begin_player_command()
+
+
+## Resolves one damage-dealing hit from `attacker` against `target`, honoring the target's
+## evade/reflect stance (both one-shot — consumed here regardless of the outcome). Applies the
+## damage to whichever combatant actually takes it (the target normally, or the attacker when
+## reflected) and returns a summary the caller uses for messaging/feedback. Evaded and reflected
+## hits skip every secondary effect (drain heal / stun / reckless recoil) — the move's only
+## remaining effect is the 0 damage / redirected damage itself.
+func _resolve_hit(attacker: Combatant, target: Combatant, move_power: int) -> Dictionary:
+	if target.evading:
+		target.evading = false
+		return {"dmg": 0, "evaded": true, "reflected": false}
+	var dmg: int = Combatant.compute_damage(attacker, target, _rng, move_power)
+	if target.reflecting:
+		target.reflecting = false
+		attacker.take_damage(dmg)
+		return {"dmg": dmg, "evaded": false, "reflected": true}
+	target.take_damage(dmg)
+	return {"dmg": dmg, "evaded": false, "reflected": false}
+
+
+## Applies a LANDED hit's secondary effects (drain heal / stun / reckless recoil) — never called
+## for an evaded or reflected hit — and returns a message suffix describing them.
+## `attacker_anchor` is where recoil/drain-heal popups land (the attacker's own HP bar/sprite).
+func _apply_secondary_effects(mv, attacker: Combatant, target: Combatant, dmg: int,
+		attacker_anchor: Control) -> String:
+	match mv.kind:
+		"drain":
+			var before := attacker.hp
+			attacker.hp = mini(attacker.hp + int(floor(dmg / 2.0)), attacker.max_hp)
+			var healed := attacker.hp - before
+			if healed <= 0:
+				return ""
+			_pop_number(attacker_anchor, "+%d" % healed, HEAL_COLOR)
+			return "  (+%d HP)" % healed
+		"stun":
+			target.stunned = true
+			return "  %s is stunned!" % target.display_name
+		"reckless":
+			var recoil: int = maxi(1, int(floor(dmg / 4.0)))
+			attacker.take_damage(recoil)
+			_pop_number(attacker_anchor, "-%d" % recoil, DMG_COLOR)
+			return "  %s is hurt by recoil (%d)!" % [attacker.display_name, recoil]
+	return ""
 
 
 func _player_attack(mv) -> void:
-	_sfx("move_" + mv.kind)   # "move_attack" or "move_drain"
-	var dmg := Combatant.compute_damage(_active, _enemy, _rng, mv.power)
-	_enemy.take_damage(dmg)
+	_sfx("move_" + mv.kind)
+	var result := _resolve_hit(_active, _enemy, mv.power)
+	var dmg: int = result["dmg"]
+	if result["evaded"]:
+		_update_hud()
+		await _say("%s uses %s — %s evades the attack!" %
+			[_active.display_name, mv.display_name, _enemy.display_name])
+		return
+	if result["reflected"]:
+		_hit_feedback(_player_hp)
+		_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
+		_update_hud()
+		await _say("%s reflects %s's %s back — %d damage!" %
+			[_enemy.display_name, _active.display_name, mv.display_name, dmg])
+		return
 	_hit_feedback(_enemy_sprite)
 	_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
-	var extra := ""
-	if mv.kind == "drain":
-		var before := _active.hp
-		_active.hp = mini(_active.hp + int(floor(dmg / 2.0)), _active.max_hp)
-		var healed := _active.hp - before
-		if healed > 0:
-			extra = "  (+%d HP)" % healed
-			_pop_number(_player_hp, "+%d" % healed, HEAL_COLOR)
+	var extra := _apply_secondary_effects(mv, _active, _enemy, dmg, _player_hp)
 	_update_hud()
 	await _say("%s uses %s — %d damage!%s" % [_active.display_name, mv.display_name, dmg, extra])
 
 
-## Enemy attacks the active monster with a random one of its offensive moves (attack or
-## drain); if that monster falls, force a switch (or lose).
+## Enemy attacks the active monster with a random one of its offensive moves (attack / drain /
+## stun / reckless); if that monster falls, force a switch (or lose). Skips entirely if stunned.
 func _enemy_turn() -> void:
 	if not _enemy.is_alive():
 		return
+	if _enemy.stunned:
+		_enemy.stunned = false
+		await _say("%s is stunned and can't move!" % _enemy.display_name)
+		return
 	var mv = _enemy_pick_move()
 	var power: int = mv.power if mv != null else 0
-	var dmg := Combatant.compute_damage(_enemy, _active, _rng, power)
-	_active.take_damage(dmg)
+	var result := _resolve_hit(_enemy, _active, power)
+	var dmg: int = result["dmg"]
 	_sfx("enemy_hit")
+	if result["evaded"]:
+		_update_hud()
+		await _say("%s attacks — %s evades!" % [_enemy.display_name, _active.display_name])
+		return
+	if result["reflected"]:
+		_hit_feedback(_enemy_sprite)
+		_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
+		_update_hud()
+		await _say("%s reflects the attack back at %s — %d damage!" %
+			[_active.display_name, _enemy.display_name, dmg])
+		return
 	_shake(_player_hp)
 	_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
-	var drained := ""
-	if mv != null and mv.kind == "drain":
-		var before := _enemy.hp
-		_enemy.hp = mini(_enemy.hp + int(floor(dmg / 2.0)), _enemy.max_hp)
-		var enemy_healed := _enemy.hp - before
-		if enemy_healed > 0:
-			drained = "  (drains %d)" % enemy_healed
-			_pop_number(_enemy_sprite, "+%d" % enemy_healed, HEAL_COLOR)
+	var extra := _apply_secondary_effects(mv, _enemy, _active, dmg, _enemy_sprite) if mv != null else ""
 	_update_hud()
 	var blocked := "  (blocked)" if _active.defending else ""
-	await _say("%s hits %s for %d!%s%s" % [_enemy.display_name, _active.display_name, dmg, blocked, drained])
+	await _say("%s hits %s for %d!%s%s" % [_enemy.display_name, _active.display_name, dmg, blocked, extra])
 	if not _active.is_alive():
 		await _on_active_defeated()
 
 
-## The enemy's offensive moves (attack or drain); null if it somehow has none.
+## The enemy's offensive moves (attack / drain / stun / reckless); null if it somehow has none.
 func _enemy_pick_move():
-	var usable := _enemy.moves.filter(func(m): return m.kind == "attack" or m.kind == "drain")
+	var usable := _enemy.moves.filter(func(m): return m.kind in ["attack", "drain", "stun", "reckless"])
 	if usable.is_empty():
 		return null
 	return usable[_rng.randi_range(0, usable.size() - 1)]
@@ -321,6 +401,8 @@ func _finish(result: int) -> void:
 func _set_active(c: Combatant) -> void:
 	_active = c
 	_active.defending = false
+	_active.evading = false
+	_active.reflecting = false
 	_active.atk_bonus = 0   # buffs never carry between battles or across a switch
 	_update_hud()
 
