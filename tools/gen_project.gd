@@ -19,6 +19,7 @@ func _init() -> void:
 	if ProjectSettings.has_setting("autoload/GameState"):
 		ProjectSettings.clear("autoload/GameState")   # migrated: GameState -> RunState
 	ProjectSettings.set_setting("autoload/RunState", "*res://autoload/run_state.gd")
+	ProjectSettings.set_setting("autoload/SoundManager", "*res://autoload/sound_manager.gd")
 	ProjectSettings.set_setting("autoload/DebugOverlay", "*res://scenes/ui/debug_overlay.tscn")
 
 	# Editor-only tooling. Has no effect on the shipped game (EditorPlugin scripts only run

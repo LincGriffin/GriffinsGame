@@ -30,6 +30,7 @@ var _enemy: Combatant
 var _state: int = State.INTRO
 var _rng := RandomNumberGenerator.new()
 var _gs: Node                 # the RunState autoload (looked up at runtime)
+var _sound: Node              # the SoundManager autoload (looked up at runtime; may be null)
 var _dynamic_buttons: Array = []   # command / monster-select buttons created on the fly
 
 @onready var _enemy_name: Label = $Panel/Col/EnemyName
@@ -51,6 +52,8 @@ func _ready() -> void:
 	add_to_group("battle")
 	_rng.randomize()
 	_gs = get_node("/root/RunState")
+	_sound = get_node_or_null("/root/SoundManager")
+	_music("battle_boss" if _enemy_data.is_boss else "battle")
 
 	_enemy = Combatant.from_monster(_enemy_data)
 	# Portrait art covers the tint block when this monster has some; otherwise the flat
@@ -72,6 +75,7 @@ func _ready() -> void:
 
 
 func _intro() -> void:
+	_sfx("encounter_boss" if _enemy.is_boss else "encounter")
 	var verb := "blocks your path!" if _enemy.is_boss else "appears!"
 	await _say("%s %s" % [_enemy.display_name, verb])
 	await _choose_lead()
@@ -120,6 +124,7 @@ func _on_flee() -> void:
 	_state = State.RESOLVING
 	_clear_dynamic_buttons()
 	if _rng.randf() < FLEE_CHANCE:
+		_sfx("flee")
 		await _say("You got away safely!")
 		_finish(Result.FLED)
 		return
@@ -132,12 +137,14 @@ func _on_flee() -> void:
 func _resolve_move(mv) -> void:
 	match mv.kind:
 		"guard":
+			_sfx("move_guard")
 			_active.defending = true
 			await _say("%s guards." % _active.display_name)
 			await _enemy_turn()
 			if _state == State.ENDED: return
 			_begin_player_command()
 		"heal":
+			_sfx("move_heal")
 			var before := _active.hp
 			_active.hp = mini(_active.hp + mv.power, _active.max_hp)
 			_update_hud()
@@ -146,6 +153,7 @@ func _resolve_move(mv) -> void:
 			if _state == State.ENDED: return
 			_begin_player_command()
 		"buff":
+			_sfx("move_buff")
 			_active.atk_bonus += mv.power
 			_update_hud()
 			await _say("%s uses %s — attack rose!" % [_active.display_name, mv.display_name])
@@ -167,6 +175,7 @@ func _resolve_move(mv) -> void:
 
 
 func _player_attack(mv) -> void:
+	_sfx("move_" + mv.kind)   # "move_attack" or "move_drain"
 	var dmg := Combatant.compute_damage(_active, _enemy, _rng, mv.power)
 	_enemy.take_damage(dmg)
 	var extra := ""
@@ -189,6 +198,7 @@ func _enemy_turn() -> void:
 	var power: int = mv.power if mv != null else 0
 	var dmg := Combatant.compute_damage(_enemy, _active, _rng, power)
 	_active.take_damage(dmg)
+	_sfx("enemy_hit")
 	var drained := ""
 	if mv != null and mv.kind == "drain":
 		var before := _enemy.hp
@@ -213,15 +223,18 @@ func _enemy_pick_move():
 func _check_enemy_down() -> bool:
 	if _enemy.is_alive():
 		return false
+	_sfx("victory")
 	await _say("%s is defeated!" % _enemy.display_name)
 	_finish(Result.PLAYER_WON)
 	return true
 
 
 func _on_active_defeated() -> void:
+	_sfx("faint")
 	await _say("%s is down!" % _active.display_name)
 	var options := _living_party()   # the downed monster (hp 0) is already excluded
 	if options.is_empty():
+		_sfx("defeat")
 		await _say("Your whole party has fallen...")
 		_finish(Result.PLAYER_LOST)
 		return
@@ -303,3 +316,13 @@ func _update_hud() -> void:
 func _say(text: String) -> void:
 	_message.text = text
 	await get_tree().create_timer(STEP).timeout
+
+
+func _sfx(id: String) -> void:
+	if _sound != null:
+		_sound.play_sfx(id)
+
+
+func _music(id: String) -> void:
+	if _sound != null:
+		_sound.play_music(id)

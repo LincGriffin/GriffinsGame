@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 RunState="*res://autoload/run_state.gd"
 DebugOverlay="*res://scenes/ui/debug_overlay.tscn"
+SoundManager="*res://autoload/sound_manager.gd"
 
 [display]
 

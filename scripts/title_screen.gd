@@ -6,9 +6,12 @@ extends CanvasLayer
 
 signal started
 
+var _sound: Node   # the SoundManager autoload (looked up at runtime; may be null)
+
 
 func _ready() -> void:
 	layer = 40   # above starter-select (30) and battle (10)
+	_sound = get_node_or_null("/root/SoundManager")
 
 	var bg := ColorRect.new()
 	bg.color = Color(0.04, 0.05, 0.11, 1.0)
@@ -41,5 +44,7 @@ func _ready() -> void:
 
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
+		if _sound != null:
+			_sound.play_sfx("ui_select")
 		started.emit()
 		queue_free()
