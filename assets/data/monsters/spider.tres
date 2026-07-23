@@ -1,13 +1,14 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_l4yxd"]
-[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_ujvdv"]
-[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_mla86"]
-[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_0vutm"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_7lprw"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_ujvdv"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_mla86"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_0vutm"]
+[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_7lprw"]
+[ext_resource type="Resource" path="res://assets/data/moves/shock.tres" id="5_fhxp7"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="6_wi01b"]
 
 [resource]
-script = ExtResource("5_7lprw")
+script = ExtResource("6_wi01b")
 id = "spider"
 display_name = "Giant Spider"
 max_hp = 33
@@ -16,4 +17,4 @@ defense = 3
 speed = 9
 tier = 2
 tint = Color(0.3, 0.3, 0.42, 1)
-moves = Array[ExtResource("1_l4yxd")]([ExtResource("2_ujvdv"), ExtResource("3_mla86"), ExtResource("4_0vutm")])
+moves = Array[ExtResource("1_ujvdv")]([ExtResource("2_mla86"), ExtResource("3_0vutm"), ExtResource("4_7lprw"), ExtResource("5_fhxp7")])

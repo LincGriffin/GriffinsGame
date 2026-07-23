@@ -1,12 +1,13 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_nlvux"]
-[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="2_tt3pr"]
-[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_oqgps"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_rrw0h"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_tt3pr"]
+[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="2_oqgps"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_rrw0h"]
+[ext_resource type="Resource" path="res://assets/data/moves/reckless_swing.tres" id="4_ih4rm"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_a5eet"]
 
 [resource]
-script = ExtResource("4_rrw0h")
+script = ExtResource("5_a5eet")
 id = "golem"
 display_name = "Stone Golem"
 max_hp = 58
@@ -15,4 +16,4 @@ defense = 8
 speed = 2
 tier = 3
 tint = Color(0.55, 0.55, 0.6, 1)
-moves = Array[ExtResource("1_nlvux")]([ExtResource("2_tt3pr"), ExtResource("3_oqgps")])
+moves = Array[ExtResource("1_tt3pr")]([ExtResource("2_oqgps"), ExtResource("3_rrw0h"), ExtResource("4_ih4rm")])

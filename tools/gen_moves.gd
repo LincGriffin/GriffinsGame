@@ -10,16 +10,22 @@ extends SceneTree
 const OUT_DIR := "res://assets/data/moves/"
 
 # id, name, kind, power, description
-# kinds: attack (deal dmg) · guard (halve next hit) · heal (restore power HP) ·
-#        drain (deal dmg, heal user half the damage) · buff (raise user's attack by power)
+# kinds: attack (deal dmg) · guard (halve next hit) · evade (next hit deals 0 dmg) ·
+#        reflect (next hit is redirected to its attacker) · heal (restore power HP) ·
+#        drain (deal dmg, heal user half the damage) · buff (raise user's attack by power) ·
+#        stun (deal dmg, target skips its next turn) · reckless (heavy dmg, user takes recoil)
 const MOVES := [
-	{"id": "strike", "name": "Strike",     "kind": "attack", "power": 0,  "desc": "A reliable hit."},
-	{"id": "heavy",  "name": "Heavy Blow",  "kind": "attack", "power": 5,  "desc": "A powerful strike."},
-	{"id": "slam",   "name": "Slam",        "kind": "attack", "power": 9,  "desc": "A crushing blow."},
-	{"id": "guard",  "name": "Guard",       "kind": "guard",  "power": 0,  "desc": "Brace — halve the next hit."},
-	{"id": "mend",   "name": "Mend",        "kind": "heal",   "power": 8,  "desc": "Recover some HP."},
-	{"id": "drain",  "name": "Drain",       "kind": "drain",  "power": 2,  "desc": "Bite and siphon — heal for half the damage."},
-	{"id": "focus",  "name": "Focus",       "kind": "buff",   "power": 3,  "desc": "Steel yourself — raise attack for the fight."},
+	{"id": "strike",  "name": "Strike",         "kind": "attack",   "power": 0,  "desc": "A reliable hit."},
+	{"id": "heavy",   "name": "Heavy Blow",      "kind": "attack",   "power": 5,  "desc": "A powerful strike."},
+	{"id": "slam",    "name": "Slam",            "kind": "attack",   "power": 9,  "desc": "A crushing blow."},
+	{"id": "guard",   "name": "Guard",           "kind": "guard",    "power": 0,  "desc": "Brace — halve the next hit."},
+	{"id": "evade",   "name": "Evade",           "kind": "evade",    "power": 0,  "desc": "Slip away — the next hit misses entirely."},
+	{"id": "reflect", "name": "Reflect",         "kind": "reflect",  "power": 0,  "desc": "Brace and reflect the next hit back at its attacker."},
+	{"id": "mend",    "name": "Mend",            "kind": "heal",     "power": 8,  "desc": "Recover some HP."},
+	{"id": "drain",   "name": "Drain",           "kind": "drain",    "power": 2,  "desc": "Bite and siphon — heal for half the damage."},
+	{"id": "focus",   "name": "Focus",           "kind": "buff",     "power": 3,  "desc": "Steel yourself — raise attack for the fight."},
+	{"id": "shock",   "name": "Shock",           "kind": "stun",     "power": 4,  "desc": "A jolting strike — the target reels and can't act next turn."},
+	{"id": "reckless_swing", "name": "Reckless Swing", "kind": "reckless", "power": 14, "desc": "A wild, all-out swing that hurts the user too."},
 ]
 
 

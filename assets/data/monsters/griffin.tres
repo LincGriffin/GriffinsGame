@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="MonsterData" format=3]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_qgkdb"]
-[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_ybuf3"]
-[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_byxxa"]
-[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="4_jgxce"]
-[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="5_gelpi"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="6_4gpae"]
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_ybuf3"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_byxxa"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_jgxce"]
+[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="4_gelpi"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="5_4gpae"]
+[ext_resource type="Resource" path="res://assets/data/moves/reckless_swing.tres" id="6_d7qd0"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="7_kho7k"]
 
 [resource]
-script = ExtResource("6_4gpae")
+script = ExtResource("7_kho7k")
 id = "griffin"
 display_name = "The Griffin"
 max_hp = 70
@@ -18,4 +19,4 @@ speed = 9
 is_elite = true
 tier = 3
 tint = Color(0.88, 0.71, 0.27, 1)
-moves = Array[ExtResource("1_qgkdb")]([ExtResource("2_ybuf3"), ExtResource("3_byxxa"), ExtResource("4_jgxce"), ExtResource("5_gelpi")])
+moves = Array[ExtResource("1_ybuf3")]([ExtResource("2_byxxa"), ExtResource("3_jgxce"), ExtResource("4_gelpi"), ExtResource("5_4gpae"), ExtResource("6_d7qd0")])

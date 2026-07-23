@@ -47,9 +47,13 @@ tile art did:
 | `encounter_boss` | The Hydra battle begins |
 | `move_attack` | The active monster uses an `attack` move |
 | `move_guard` | The active monster uses a `guard` move |
+| `move_evade` | The active monster uses an `evade` move |
+| `move_reflect` | The active monster uses a `reflect` move |
 | `move_heal` | The active monster uses a `heal` move |
 | `move_drain` | The active monster uses a `drain` move |
 | `move_buff` | The active monster uses a `buff` move |
+| `move_stun` | The active monster uses a `stun` move |
+| `move_reckless` | The active monster uses a `reckless` move |
 | `enemy_hit` | The enemy lands a hit on the active monster |
 | `faint` | A party monster is knocked out |
 | `switch` | The player voluntarily swaps in another monster (costs the turn) |

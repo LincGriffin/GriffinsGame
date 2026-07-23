@@ -4,7 +4,9 @@ extends "res://tools/tests/_base.gd"
 func test_move_roster_present() -> void:
 	var expected := {
 		"strike": "attack", "heavy": "attack", "slam": "attack",
-		"guard": "guard", "mend": "heal", "drain": "drain", "focus": "buff",
+		"guard": "guard", "evade": "evade", "reflect": "reflect",
+		"mend": "heal", "drain": "drain", "focus": "buff",
+		"shock": "stun", "reckless_swing": "reckless",
 	}
 	for id in expected:
 		var mv = load("res://assets/data/moves/%s.tres" % id)
@@ -18,6 +20,12 @@ func test_heavy_hits_harder_than_strike() -> void:
 	var slam = load("res://assets/data/moves/slam.tres")
 	check(heavy.power > strike.power, "heavy has more power than strike")
 	check(slam.power > heavy.power, "slam hits harder still")
+
+
+func test_reckless_swing_hits_harder_than_slam() -> void:
+	var slam = load("res://assets/data/moves/slam.tres")
+	var reckless = load("res://assets/data/moves/reckless_swing.tres")
+	check(reckless.power > slam.power, "reckless swing trades safety for the hardest hit in the game")
 
 
 func test_monsters_have_movesets() -> void:

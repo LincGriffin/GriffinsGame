@@ -39,6 +39,7 @@ var recruited: Array[String] = []
 var _tree: SceneTree
 var _root: Node
 var _run_ctrl   # detached Run instance — reused so node resolution never drifts from run.gd
+var _random_moves := false   # see play()'s random_moves param
 
 
 func _init(tree: SceneTree) -> void:
@@ -56,8 +57,12 @@ func _init(tree: SceneTree) -> void:
 ## Play out one full run starting from `starter`. Stops early on a party wipe. Records to
 ## RunHistory.SIMULATED_PATH (scripts/data/run_history.gd) unless `record_history` is false —
 ## keep it on for real balance-simulation runs, turn it off for anything that shouldn't pollute
-## the log (e.g. a future automated test exercising RunHarness itself).
-func play(starter: MonsterData, record_history := true) -> void:
+## the log (e.g. a future automated test exercising RunHarness itself). `random_moves` picks a
+## uniformly random move each turn (from the active monster's FULL moveset — guard/heal/buff/
+## evade/reflect/stun/reckless included, not just attack/drain) instead of the default
+## always-prefer-offense heuristic; see _pick_move().
+func play(starter: MonsterData, record_history := true, random_moves := false) -> void:
+	_random_moves = random_moves
 	var starter_id := String(starter.id)
 	run_state.new_run(starter)
 	log.append("Starter: %s (HP %d, ATK %d)" % [
@@ -151,7 +156,7 @@ func _fight(node: Dictionary) -> void:
 		if h.last_beat == BATTLE_HARNESS.Beat.PROMPT:
 			await h.resolve_prompt(String(h.last_prompt_options[0].source.id))
 			continue
-		var move_id := _pick_attack(h)
+		var move_id := _pick_move(h)
 		if move_id == "":
 			break
 		await h.use_move(move_id)
@@ -192,13 +197,18 @@ func _roster_summary() -> String:
 	return ", ".join(parts)
 
 
-## Prefer an offensive move (attack/drain); fall back to whatever the active monster knows.
-func _pick_attack(h) -> String:
+## Default AI: prefer an offensive move (attack/drain); fall back to whatever's known. With
+## random_moves, instead pick uniformly at random from the FULL moveset (any kind).
+func _pick_move(h) -> String:
 	var moves = h.battle._active.moves
+	if moves.is_empty():
+		return ""
+	if _random_moves:
+		return moves[_run_ctrl._rng.randi_range(0, moves.size() - 1)].id
 	for mv in moves:
 		if mv.kind == "attack" or mv.kind == "drain":
 			return mv.id
-	return moves[0].id if not moves.is_empty() else ""
+	return moves[0].id
 
 
 func teardown() -> void:

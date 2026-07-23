@@ -17,6 +17,15 @@ var atk_bonus := 0               # temporary attack buff (from "buff" moves); re
 var source: MonsterData = null   # the static def this came from (null for make())
 var moves: Array = []            # Array[MoveData] — copied so run-time grants don't touch the resource
 
+# One-shot defensive stances (from "reflect"/"evade" moves) — like `defending`, these guard
+# against exactly the next incoming hit and are consumed (or expire) at the start of the next
+# command menu; see battle.gd's _resolve_hit(). "stunned" is different: it's inflicted BY an
+# opponent's "stun" move and checked/cleared at the start of the stunned side's own next turn,
+# skipping it entirely.
+var evading := false     # the next hit against this combatant deals 0 damage
+var reflecting := false  # the next hit against this combatant is redirected to its attacker
+var stunned := false     # skip this combatant's next turn
+
 
 func is_alive() -> bool:
 	return hp > 0
