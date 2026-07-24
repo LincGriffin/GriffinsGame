@@ -38,3 +38,6 @@ Desktop.ini
 # Third-party asset packs (local source library). Not redistributed — the game only
 # commits the few derived sprites it actually uses (see assets/node_sprites/README.md).
 /assets/thirdparty/
+
+# Screenshot harness output (tools/screenshot.gd) — regenerable, not source.
+/screenshots/

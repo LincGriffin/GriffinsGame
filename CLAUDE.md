@@ -455,6 +455,19 @@ Quality gates:
 
 Manual/simulation tools:
 - **`simulate_battle.gd`** — headless Monte Carlo battle simulator via `BattleHarness`; see above.
+- **`screenshot.gd`** — **visual verification.** Renders real screens/overlays and saves PNGs to
+  `screenshots/` (gitignored, `.gdignore`d) so UI changes can be *looked at*, not just asserted
+  about. Shots: `title`, `starter_select`, `dungeon`, `battle`, `powerup_select`, `merge_select`.
+  ```bash
+  "$GODOT" --path "C:\\Users\\Dad\\GriffinsGame" --script res://tools/screenshot.gd            # all
+  "$GODOT" --path "C:\\Users\\Dad\\GriffinsGame" --script res://tools/screenshot.gd -- dungeon  # one
+  ```
+  **⚠ Do NOT pass `--headless`** — it uses the dummy display driver, so there's no rendering context
+  and the capture comes back empty. This is the one tool that needs a real window (it opens briefly,
+  captures, and quits itself). Two things it gets right that are easy to get wrong: each shot
+  **clears the root first** (leftover fixtures are all named `RunState`, so a stale one makes the
+  next shot render an empty party), and shots whose script isn't on the current branch are
+  **skipped, not failed** — so it still runs while a UI is on a feature branch.
 
 PR helper:
 - **`open_pr.sh`** — `tools/open_pr.sh "<title>" <body.md> [base]` opens (or finds) the PR for the
