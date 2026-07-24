@@ -177,6 +177,11 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   (`warp_to` — drop the player ~2 rows ahead) / **room** (a treasure chest → party-wide +max HP,
   `ROOM_BONUS_HP`, resolved **in place**). Win the boss → YOU WIN; a party wipe → GAME OVER
   (press **R** → fresh run + new starter). Nothing persists between runs.
+- **Non-battle node feedback:** every node type plays its `node_*` sfx (`SoundManager`), and the
+  ones that resolve silently in place — **heal / treasure / teleport** — also show a brief fading
+  **`run.gd::_toast(text)`** banner ("Party fully healed!", "Treasure! +N max HP", "Teleport!").
+  Battle/elite/boss show the battle overlay and power-up shows its chooser, so those are their own
+  feedback (no toast).
 - **Elite nodes** are gated to rows ≥ `MapGenerator.ELITE_MIN_ROW` (the run eases in) with a small
   weight; they draw from the elite pool (`ELITE_ENEMIES` in `run.gd`).
 - **Marker tiles:** the tileset atlas is floor `(0,0)`, wall `(1,0)`, then walkable node markers

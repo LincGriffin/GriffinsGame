@@ -165,19 +165,49 @@ func _enter_room(id: int) -> void:
 		"heal":
 			_sfx("node_heal")
 			_heal_party()
+			_toast("Party fully healed!")
 			_advance(id)
 		"powerup":
 			_sfx("node_powerup")
-			_open_powerup_chooser(id)
+			_open_powerup_chooser(id)   # the chooser overlay is its own on-screen feedback
 		"teleport":
 			_sfx("node_teleport")
+			_toast("Teleport!")
 			_teleport(id)
 		"room":
 			_sfx("node_room")
 			_grant_treasure()
+			_toast("Treasure!  +%d max HP" % ROOM_BONUS_HP)
 			_advance(id)
 		_:
 			_advance(id)
+
+
+## A brief centered banner that fades in, holds, and fades out — on-screen feedback for a
+## non-battle node (heal / treasure / teleport), which otherwise resolve silently in place.
+## Purely cosmetic; auto-frees. (Battle/elite/boss show the battle overlay; power-up shows its
+## chooser — so those provide their own feedback.)
+func _toast(text: String) -> void:
+	if not is_inside_tree():
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 25
+	add_child(layer)
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 34)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	label.add_theme_constant_override("outline_size", 6)
+	label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	label.offset_top = 64
+	label.offset_bottom = 116
+	layer.add_child(label)
+	var tw := create_tween()
+	tw.tween_property(label, "modulate:a", 1.0, 0.2).from(0.0)
+	tw.tween_interval(1.1)
+	tw.tween_property(label, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(layer.queue_free)
 
 
 func _do_battle(id: int, enemy: MonsterData) -> void:
