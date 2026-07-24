@@ -139,25 +139,40 @@ func test_evade_negates_the_next_hit() -> void:
 		"the evading monster takes 0 damage from the enemy's follow-up attack")
 
 
-func test_reflect_redirects_damage_to_the_attacker() -> void:
+func test_reflect_is_thorns_both_sides_take_the_damage() -> void:
 	await h.start([_specialist("mirror_mon", "reflect", "bounce", 0)], _brute("ogre"))
 	await h.use_move("bounce")
-	check(not h.is_finished, "reflecting doesn't end the battle — the brute survives the redirect")
-	eq(h.run_state.party[0].hp, h.run_state.party[0].max_hp,
-		"the reflecting monster takes 0 damage — it goes to the attacker instead")
+	check(not h.is_finished, "reflecting doesn't end the battle — both are 100-hp")
+	check(h.run_state.party[0].hp < h.run_state.party[0].max_hp,
+		"the reflecting monster STILL takes the damage (reflect no longer prevents it)")
 	check(h.battle._enemy.hp < h.battle._enemy.max_hp,
-		"the enemy takes its own attack's damage back")
+		"the enemy also takes the same damage reflected back (thorns)")
 
 
-func test_stun_skips_the_stunned_sides_next_turn() -> void:
-	# The stunner outspeeds the brute, so its stun lands before the brute's own turn — which
-	# should then be skipped entirely, leaving the stunner's HP untouched this round.
+func test_stun_lands_and_skips_the_enemy_turn() -> void:
 	await h.start([_specialist("zapper", "stun", "zap", 4)], _brute("ogre"))
+	h.battle.STUN_CHANCE = 1.0   # force the 50% stun to land, for a deterministic outcome
 	await h.use_move("zap")
 	check(not h.is_finished, "stunning doesn't end the battle")
 	check(h.battle._enemy.hp < h.battle._enemy.max_hp, "the stun attack itself still deals damage")
 	eq(h.run_state.party[0].hp, h.run_state.party[0].max_hp,
 		"the stunned enemy's turn is skipped, so the stunner takes no counter-damage")
+
+
+func test_stun_can_miss() -> void:
+	await h.start([_specialist("zapper", "stun", "zap", 4)], _brute("ogre"))
+	h.battle.STUN_CHANCE = 0.0   # force the stun to fail
+	await h.use_move("zap")
+	check(h.run_state.party[0].hp < h.run_state.party[0].max_hp,
+		"when the stun fails the enemy still acts, so the player takes a counter-hit")
+
+
+func test_guard_grants_a_counter_bonus_consumed_by_the_next_attack() -> void:
+	await h.start([_specialist("bracer", "guard", "brace", 0)], _brute("ogre"))
+	await h.use_move("brace")   # guard → sets a one-shot counter bonus
+	eq(h.battle._active.counter_bonus, h.battle.COUNTER_ATK, "guard sets a one-shot counter bonus")
+	await h.use_move("hit")     # the specialist's basic attack consumes it
+	eq(h.battle._active.counter_bonus, 0, "the counter bonus is consumed by the next attack")
 
 
 func test_reckless_damages_both_sides() -> void:

@@ -28,6 +28,13 @@ var STEP := 0.7   # seconds between battle messages (pacing) — a var (not cons
 const FLEE_CHANCE := 0.5
 const FLEE_ENABLED := false   # hidden for now — flip back on to restore the Flee command
 
+## A "stun" move only lands STUN_CHANCE of the time (balance). A var (not const) so a test harness
+## can force it to 1.0/0.0 for a deterministic outcome — _rng is randomize()d in _ready().
+var STUN_CHANCE := 0.5
+## Guard/evade also grant this one-shot attack bonus, added to the caster's NEXT attack (turtle-
+## then-strike) on top of their damage mitigation.
+const COUNTER_ATK := 3
+
 # HP bar juice: animated fill + a green/yellow/red tint by remaining percentage.
 const HP_TWEEN_TIME := 0.35
 const HP_HIGH_COLOR := Color(0.35, 0.85, 0.35)
@@ -208,12 +215,14 @@ func _resolve_move(mv) -> void:
 		"guard":
 			_sfx("move_guard")
 			_active.defending = true
-			await _say("%s guards." % _active.display_name)
+			_active.counter_bonus = COUNTER_ATK   # brace, then hit back harder next turn
+			await _say("%s guards — braced to strike back!" % _active.display_name)
 			await _end_player_turn()
 		"evade":
 			_sfx("move_evade")
 			_active.evading = true
-			await _say("%s prepares to evade!" % _active.display_name)
+			_active.counter_bonus = COUNTER_ATK
+			await _say("%s prepares to evade — and counter!" % _active.display_name)
 			await _end_player_turn()
 		"reflect":
 			_sfx("move_reflect")
@@ -249,11 +258,11 @@ func _resolve_move(mv) -> void:
 
 
 ## Resolves one damage-dealing hit from `attacker` against `target`, honoring the target's
-## evade/reflect stance (both one-shot — consumed here regardless of the outcome). Applies the
-## damage to whichever combatant actually takes it (the target normally, or the attacker when
-## reflected) and returns a summary the caller uses for messaging/feedback. Evaded and reflected
-## hits skip every secondary effect (drain heal / stun / reckless recoil) — the move's only
-## remaining effect is the 0 damage / redirected damage itself.
+## evade/reflect stance (both one-shot — consumed here regardless of the outcome). Returns a summary
+## the caller uses for messaging/feedback. `evade` fully negates the hit (0 damage). `reflect` is
+## a THORNS effect: the target STILL takes the damage AND the attacker takes the same amount back
+## (it no longer prevents the target's own damage). Both evaded and reflected hits skip every
+## secondary effect (drain heal / stun / reckless recoil) — only the base damage is dealt.
 func _resolve_hit(attacker: Combatant, target: Combatant, move_power: int) -> Dictionary:
 	if target.evading:
 		target.evading = false
@@ -261,7 +270,8 @@ func _resolve_hit(attacker: Combatant, target: Combatant, move_power: int) -> Di
 	var dmg: int = Combatant.compute_damage(attacker, target, _rng, move_power)
 	if target.reflecting:
 		target.reflecting = false
-		attacker.take_damage(dmg)
+		target.take_damage(dmg)     # reflect no longer prevents the target's damage...
+		attacker.take_damage(dmg)   # ...and still reflects the same damage back at the attacker
 		return {"dmg": dmg, "evaded": false, "reflected": true}
 	target.take_damage(dmg)
 	return {"dmg": dmg, "evaded": false, "reflected": false}
@@ -283,6 +293,8 @@ func _apply_secondary_effects(mv, attacker: Combatant, target: Combatant, dmg: i
 			_pop_number(attacker_anchor, "+%d" % healed, HEAL_COLOR)
 			return "  (+%d HP)" % healed
 		"stun":
+			if _rng.randf() >= STUN_CHANCE:
+				return "  (stun failed)"
 			target.stunned = true
 			return "  %s is stunned!" % target.display_name
 		"reckless":
@@ -295,7 +307,13 @@ func _apply_secondary_effects(mv, attacker: Combatant, target: Combatant, dmg: i
 
 func _player_attack(mv) -> void:
 	_sfx("move_" + mv.kind)
+	# Fold a one-shot counter bonus (from a prior guard/evade) into this attack, then consume it.
+	var counter: int = _active.counter_bonus
+	_active.counter_bonus = 0
+	var saved_bonus := _active.atk_bonus
+	_active.atk_bonus += counter
 	var result := _resolve_hit(_active, _enemy, mv.power)
+	_active.atk_bonus = saved_bonus
 	var dmg: int = result["dmg"]
 	if result["evaded"]:
 		_update_hud()
@@ -303,15 +321,22 @@ func _player_attack(mv) -> void:
 			[_active.display_name, mv.display_name, _enemy.display_name])
 		return
 	if result["reflected"]:
+		# Enemy had a reflect stance — thorns: both sides take the damage.
+		_hit_feedback(_enemy_sprite)
+		_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
 		_hit_feedback(_player_hp)
 		_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
 		_update_hud()
-		await _say("%s reflects %s's %s back — %d damage!" %
-			[_enemy.display_name, _active.display_name, mv.display_name, dmg])
+		await _say("%s's reflect — %s and %s each take %d!" %
+			[_enemy.display_name, _enemy.display_name, _active.display_name, dmg])
+		if not _active.is_alive():
+			await _on_active_defeated()
 		return
 	_hit_feedback(_enemy_sprite)
 	_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
 	var extra := _apply_secondary_effects(mv, _active, _enemy, dmg, _player_hp)
+	if counter > 0:
+		extra += "  (counter +%d!)" % counter
 	_update_hud()
 	await _say("%s uses %s — %d damage!%s" % [_active.display_name, mv.display_name, dmg, extra])
 
@@ -335,11 +360,16 @@ func _enemy_turn() -> void:
 		await _say("%s attacks — %s evades!" % [_enemy.display_name, _active.display_name])
 		return
 	if result["reflected"]:
+		# Player had a reflect stance — thorns: the player takes it AND reflects it back.
+		_shake(_player_hp)
+		_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
 		_hit_feedback(_enemy_sprite)
 		_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
 		_update_hud()
-		await _say("%s reflects the attack back at %s — %d damage!" %
+		await _say("%s reflects %s's attack — both take %d!" %
 			[_active.display_name, _enemy.display_name, dmg])
+		if not _active.is_alive():
+			await _on_active_defeated()
 		return
 	_shake(_player_hp)
 	_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
@@ -401,6 +431,7 @@ func _set_active(c: Combatant) -> void:
 	_active.evading = false
 	_active.reflecting = false
 	_active.atk_bonus = 0   # buffs never carry between battles or across a switch
+	_active.counter_bonus = 0
 	_update_hud()
 
 
