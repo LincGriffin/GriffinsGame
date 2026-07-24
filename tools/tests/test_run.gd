@@ -62,3 +62,45 @@ func test_build_run_record_shape() -> void:
 	eq(record["final_party"][0]["id"], "slime", "final_party entries include the monster id")
 	run.free()
 	rs.free()
+
+
+# --- power-up chooser (Phase 16): 3-choice upgrades assigned to a monster -------------------
+
+func test_grant_upgrade_applies_each_type() -> void:
+	var run := _new_run()
+	var combatant = load("res://scripts/battle/combatant.gd")
+	var c = combatant.make("Test", 20, 5, 3, 10)
+	c.hp = 15
+
+	run._grant_upgrade(c, {"type": "hp", "amount": 10, "move": null})
+	eq(c.max_hp, 30, "hp upgrade raises max_hp")
+	eq(c.hp, 25, "hp upgrade heals by the same amount")
+
+	run._grant_upgrade(c, {"type": "attack", "amount": 3, "move": null})
+	eq(c.attack, 8, "attack upgrade raises attack")
+
+	run._grant_upgrade(c, {"type": "defense", "amount": 3, "move": null})
+	eq(c.defense, 6, "defense upgrade raises defense")
+
+	var mv = load("res://assets/data/moves/drain.tres")
+	var before: int = c.moves.size()
+	run._grant_upgrade(c, {"type": "move", "amount": 0, "move": mv})
+	eq(c.moves.size(), before + 1, "move upgrade teaches the move")
+	run._grant_upgrade(c, {"type": "move", "amount": 0, "move": mv})
+	eq(c.moves.size(), before + 1, "move upgrade never duplicates a known move")
+	run.free()
+
+
+func test_build_upgrade_options_offers_three_with_a_move() -> void:
+	var run := _new_run()
+	var rs = load("res://autoload/run_state.gd").new()
+	rs.new_run(load("res://assets/data/monsters/slime.tres"))
+	run._gs = rs
+	var opts: Array = run._build_upgrade_options()
+	eq(opts.size(), 3, "exactly three upgrade choices are offered")
+	var types := {}
+	for o in opts:
+		types[String(o["type"])] = true
+	check(types.has("move"), "a learnable move is among the options when one exists")
+	run.free()
+	rs.free()

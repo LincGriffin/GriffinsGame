@@ -7,6 +7,7 @@ extends Node
 
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
+const POWERUP_SELECT := preload("res://scripts/powerup_select.gd")
 const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
 const SETTINGS_MENU := preload("res://scripts/settings_menu.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
@@ -49,8 +50,13 @@ const MOVE_POOL: Array[MoveData] = [
 	preload("res://assets/data/moves/focus.tres"),
 ]
 
-const POWERUP_HP := 6      # +max HP a power-up grants when no new move can be learned
+const POWERUP_HP := 6      # +max HP the headless auto-power-up grants when no new move can be learned
 const ROOM_BONUS_HP := 5   # +max HP the treasure room grants party-wide
+
+# Interactive power-up chooser magnitudes (one is applied to the monster the player assigns).
+const UPGRADE_HP := 10     # +max HP (and heals that much)
+const UPGRADE_ATK := 3     # +attack
+const UPGRADE_DEF := 3     # +defense
 
 var _gs: Node
 var _sound: Node   # the SoundManager autoload (looked up at runtime; may be null)
@@ -159,8 +165,7 @@ func _enter_room(id: int) -> void:
 			_advance(id)
 		"powerup":
 			_sfx("node_powerup")
-			_apply_powerup()
-			_advance(id)
+			_open_powerup_chooser(id)
 		"teleport":
 			_sfx("node_teleport")
 			_teleport(id)
@@ -284,6 +289,82 @@ func _knows(c, mv) -> bool:
 		if m.id == mv.id:
 			return true
 	return false
+
+
+## Interactive power-up: pop the chooser overlay (3 upgrades → assign to a monster), apply the
+## pick, then clear the room. Falls back to the headless auto-power-up if there's no live view
+## (shouldn't happen in the real game — room_entered only fires with a view).
+func _open_powerup_chooser(id: int) -> void:
+	if _view == null:
+		_apply_powerup()
+		_advance(id)
+		return
+	_view.set_walking(false)
+	var sel: PowerupSelect = POWERUP_SELECT.new()
+	sel.setup(_build_upgrade_options(), _gs.living())
+	sel.chosen.connect(func(up, monster):
+		_grant_upgrade(monster, up)
+		sel.queue_free()
+		_advance(id))
+	add_child(sel)
+
+
+## Build the 3 upgrade choices offered by the chooser: two random stat buffs plus a learnable
+## move when one exists (else three stat buffs). Each is a Dictionary the overlay renders and
+## _grant_upgrade() applies.
+func _build_upgrade_options() -> Array:
+	var stats: Array = [
+		{"type": "hp", "amount": UPGRADE_HP, "move": null,
+			"label": "+%d Max HP" % UPGRADE_HP, "desc": "Raise & heal"},
+		{"type": "attack", "amount": UPGRADE_ATK, "move": null,
+			"label": "+%d Attack" % UPGRADE_ATK, "desc": "Hit harder"},
+		{"type": "defense", "amount": UPGRADE_DEF, "move": null,
+			"label": "+%d Defense" % UPGRADE_DEF, "desc": "Take less"},
+	]
+	_shuffle(stats)
+	var teachable := _teachable_moves()
+	if teachable.is_empty():
+		return stats.slice(0, 3)
+	var mv = teachable[_rng.randi_range(0, teachable.size() - 1)]
+	var move_opt := {"type": "move", "amount": 0, "move": mv,
+		"label": "Learn %s" % mv.display_name, "desc": "New move"}
+	# a move plus two random stat buffs — a mix of "combination of hp/attack/defense or new moves"
+	return [move_opt, stats[0], stats[1]]
+
+
+## Moves in the pool that at least one living monster doesn't already know.
+func _teachable_moves() -> Array:
+	var out: Array = []
+	for mv in MOVE_POOL:
+		for c in _gs.living():
+			if not _knows(c, mv):
+				out.append(mv)
+				break
+	return out
+
+
+## Apply one upgrade Dictionary to a specific monster (the recipient the player assigned).
+func _grant_upgrade(monster, up: Dictionary) -> void:
+	match String(up["type"]):
+		"hp":
+			monster.max_hp += int(up["amount"])
+			monster.hp += int(up["amount"])
+		"attack":
+			monster.attack += int(up["amount"])
+		"defense":
+			monster.defense += int(up["amount"])
+		"move":
+			if not _knows(monster, up["move"]):
+				monster.moves.append(up["move"])
+
+
+## In-place Fisher-Yates shuffle using the run's seeded RNG (Array.shuffle() uses the global one).
+func _shuffle(arr: Array) -> void:
+	for i in range(arr.size() - 1, 0, -1):
+		var j := _rng.randi_range(0, i)
+		var tmp = arr[i]
+		arr[i] = arr[j]
+		arr[j] = tmp
 
 
 ## Group the wild pool by difficulty tier so encounters can scale with map depth.

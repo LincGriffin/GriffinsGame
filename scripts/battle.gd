@@ -6,7 +6,7 @@ extends CanvasLayer
 ## the run. You lose only when the whole party is wiped.
 ##
 ## The command menu lists the active monster's MOVES (plus Flee vs non-boss). Move kinds:
-## attack (damage = attack + power - def/2), drain (attack that heals half the damage dealt),
+## attack (damage = attack + power - def/2), drain (attack that heals 3/8 of the damage dealt),
 ## guard (halve the incoming hit), evade (the next hit deals 0 damage), reflect (the next hit is
 ## redirected to its attacker instead), heal (restore HP), buff (raise attack for the battle),
 ## stun (an attack that also skips the target's next turn), and reckless (a heavy attack that
@@ -236,19 +236,15 @@ func _resolve_move(mv) -> void:
 			_update_hud()
 			await _say("%s uses %s — attack rose!" % [_active.display_name, mv.display_name])
 			await _end_player_turn()
-		_:   # attack / drain / stun / reckless — resolve both sides in speed order (player wins ties)
-			if _active.speed >= _enemy.speed:
-				await _player_attack(mv)
-				if await _check_enemy_down(): return
-				await _enemy_turn()
-				if _state == State.ENDED: return
-				if await _check_enemy_down(): return
-			else:
-				await _enemy_turn()
-				if _state == State.ENDED: return
-				if await _check_enemy_down(): return
-				await _player_attack(mv)
-				if await _check_enemy_down(): return
+		_:   # attack / drain / stun / reckless — the player's active monster ALWAYS acts first.
+			# Speed is intentionally ignored (the stat is hidden from the player); there is no
+			# longer a speed race, so the active monster's attack always resolves before the
+			# enemy's answer.
+			await _player_attack(mv)
+			if await _check_enemy_down(): return
+			await _enemy_turn()
+			if _state == State.ENDED: return
+			if await _check_enemy_down(): return
 			await _begin_player_command()
 
 
@@ -279,7 +275,8 @@ func _apply_secondary_effects(mv, attacker: Combatant, target: Combatant, dmg: i
 	match mv.kind:
 		"drain":
 			var before := attacker.hp
-			attacker.hp = mini(attacker.hp + int(floor(dmg / 2.0)), attacker.max_hp)
+			# Lifesteal is 3/8 of the damage dealt — half, reduced by 25% (was dmg/2).
+			attacker.hp = mini(attacker.hp + int(floor(dmg * 3.0 / 8.0)), attacker.max_hp)
 			var healed := attacker.hp - before
 			if healed <= 0:
 				return ""

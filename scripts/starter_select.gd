@@ -81,8 +81,8 @@ func _make_card(m: MonsterData) -> Control:
 	var label := Label.new()
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.text = "%s\nHP %d\nATK %d   DEF %d\nSPD %d" % [
-		m.display_name, m.max_hp, m.attack, m.defense, m.speed]
+	label.text = "%s\nHP %d\nATK %d   DEF %d" % [
+		m.display_name, m.max_hp, m.attack, m.defense]
 	col.add_child(label)
 	return b
 
