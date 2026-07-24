@@ -28,6 +28,7 @@ func _init() -> void:
 		PackedStringArray([
 			"res://addons/monster_editor/plugin.cfg",
 			"res://addons/move_editor/plugin.cfg",
+			"res://addons/powerup_editor/plugin.cfg",
 		]))
 
 	var err := ProjectSettings.save()

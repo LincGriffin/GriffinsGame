@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PowerupData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/powerup_data.gd" id="1_1ua2d"]
+
+[resource]
+script = ExtResource("1_1ua2d")
+id = "learn_drain"
+display_name = "Learn Drain"
+description = "Teach the move Drain"
+effect = "move"
+amount = 0
+move_id = "drain"
+tint = Color(0.62, 0.36, 0.86, 1)

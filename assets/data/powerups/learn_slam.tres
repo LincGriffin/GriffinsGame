@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PowerupData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/powerup_data.gd" id="1_0vpgk"]
+
+[resource]
+script = ExtResource("1_0vpgk")
+id = "learn_slam"
+display_name = "Learn Slam"
+description = "Teach the move Slam"
+effect = "move"
+amount = 0
+move_id = "slam"
+tint = Color(0.62, 0.36, 0.86, 1)
