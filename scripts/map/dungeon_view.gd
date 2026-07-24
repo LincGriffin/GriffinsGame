@@ -14,6 +14,7 @@ signal room_entered(id: int)
 const PLAYER_SCENE := preload("res://scenes/overworld/player.tscn")
 const TILESET := preload("res://assets/tilesets/dungeon_tileset.tres")
 const MAP_SPRITES := preload("res://scripts/data/map_sprites.gd")
+const NODE_SPRITES := preload("res://scripts/data/node_sprites.gd")
 const SOURCE_ID := 0
 const TILE_SIZE := 64   # matches gen_art.gd / player.gd — see CLAUDE.md's 64px coupling note
 
@@ -58,7 +59,7 @@ func setup(map: Dictionary) -> void:
 	# Paint every room (walls + interior + marker) and register its interior trigger cells.
 	_paint_room(ENTRANCE, null, null)
 	for n in map["nodes"]:
-		_paint_room(int(n["id"]), MARKER.get(n["type"], FLOOR), n.get("enemy"))
+		_paint_room(int(n["id"]), MARKER.get(n["type"], FLOOR), n.get("enemy"), String(n["type"]))
 
 	# Carve every corridor — all open, so the dungeon is one connected walkable space.
 	for s in map["start_row_nodes"]:
@@ -88,7 +89,7 @@ func _center(id: int) -> Vector2i:
 ## `enemy` is the room's pre-rolled MonsterData (battle/elite/boss; null otherwise, from
 ## run.gd's `_assign_encounters`). When it has map art (scripts/data/map_sprites.gd), that
 ## sprite is drawn over the generic marker tile; absent art just leaves the marker as-is.
-func _paint_room(id: int, marker, enemy) -> void:
+func _paint_room(id: int, marker, enemy, node_type := "") -> void:
 	var o: Vector2i = _origin[id]
 	for dy in range(ROOM):
 		for dx in range(ROOM):
@@ -99,11 +100,17 @@ func _paint_room(id: int, marker, enemy) -> void:
 				_room_cells[c] = id   # stepping any interior cell triggers the node
 	if marker != null and id != ENTRANCE:
 		_paint(o + Vector2i(2, 2), marker)
-		_paint_map_sprite(id, o + Vector2i(2, 2), enemy)
+		_paint_node_overlay(id, o + Vector2i(2, 2), enemy, node_type)
 
 
-func _paint_map_sprite(id: int, cell: Vector2i, enemy) -> void:
+## Draw the most specific art this room has over its generic gem marker: the encounter's
+## monster map sprite (battle/elite/boss) first, else a per-node-type sprite
+## (assets/node_sprites/<type>.png — heal "+", powerup/room chests, teleport pad). With neither,
+## the generated marker tile just stays as-is.
+func _paint_node_overlay(id: int, cell: Vector2i, enemy, node_type: String) -> void:
 	var tex := MAP_SPRITES.for_monster(enemy)
+	if tex == null:
+		tex = NODE_SPRITES.for_type(node_type)
 	if tex == null:
 		return
 	var spr := Sprite2D.new()
