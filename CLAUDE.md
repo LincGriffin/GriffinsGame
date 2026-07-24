@@ -26,6 +26,13 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **Tile size is 64px** and the player `Camera2D` is at **zoom 1** — together these render the same
   on-screen size the old 32px-at-zoom-2 art did, with 4× the pixel detail. Changing one without the
   other rescales the whole game.
+- **Asset licensing — this is a NON-COMMERCIAL game.** When sourcing art/audio, licenses limited to
+  **non-commercial use are acceptable** (a much wider pool than CC0-only). But non-commercial status
+  does **not** waive the other terms, which must be checked separately: **redistribution/repackaging**
+  limits (why `assets/thirdparty/` is gitignored — see below), **attribution** (CC-BY still needs
+  credit), **no-AI-training** clauses, and whether **modification** is permitted. Rule of thumb:
+  keep whole packs local/gitignored, commit only the small derived game-ready copies, and record the
+  source + license in the relevant `assets/<kind>/README.md`.
 - `assets/thirdparty/` — **local third-party asset packs, gitignored and `.gdignore`d.** Vendored
   source art (e.g. the Spirit Claw "Claw&Blade" pack) whose license permits *using and modifying*
   the art in a game but **not redistributing/repackaging the pack** — so the repo commits only the
