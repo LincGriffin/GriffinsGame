@@ -9,8 +9,10 @@ func before_each() -> void:
 	NODE_SPRITES.clear_cache()
 
 
-func test_the_shipped_node_sprites_exist() -> void:
-	for type in ["heal", "powerup", "room", "teleport"]:
+func test_every_room_type_has_a_node_sprite() -> void:
+	# All 7 node types now have art (battle/elite/boss are generic fallbacks used when the room's
+	# monster has no map sprite of its own).
+	for type in ["battle", "elite", "boss", "heal", "powerup", "room", "teleport"]:
 		check(NODE_SPRITES.for_type(type) != null,
 			"the '%s' node sprite is present, so its marker shows art" % type)
 
@@ -27,8 +29,3 @@ func test_lookup_is_memoised() -> void:
 	check(first == second, "repeated lookups return the same cached texture")
 
 
-func test_encounter_types_have_no_generic_sprite() -> void:
-	# battle/elite/boss deliberately ship none — they use the monster's own map sprite instead.
-	for type in ["battle", "elite", "boss"]:
-		check(NODE_SPRITES.for_type(type) == null,
-			"'%s' has no generic node sprite (monster map sprite is used)" % type)

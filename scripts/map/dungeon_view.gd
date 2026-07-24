@@ -27,6 +27,20 @@ const MARKER := {
 	"room": Vector2i(8, 0),
 }
 
+# A soft glow behind each room's marker, tinted by node type (in addition to the gem's tint) so
+# room kinds read at a glance: red = a monster fight, green = heal, gold = treasure, etc.
+const TYPE_GLOW := {
+	"battle": Color(0.95, 0.32, 0.28),    # red — a monster fight
+	"elite": Color(1.0, 0.55, 0.15),      # orange — a tough fight
+	"boss": Color(0.90, 0.20, 0.55),      # magenta — the boss
+	"heal": Color(0.40, 0.92, 0.48),      # green — heal
+	"powerup": Color(0.36, 0.62, 1.0),    # blue — power-up
+	"room": Color(1.0, 0.82, 0.32),       # gold — treasure
+	"teleport": Color(0.72, 0.46, 1.0),   # violet — teleport
+}
+const GLOW_TEX := 128        # radial glow texture size (px)
+const GLOW_SPAN := 1.7       # glow diameter as a multiple of the tile (spills onto neighbours)
+
 const ROOM := 5           # each room is 5x5: a 3x3 interior inside a wall ring
 const GAP := 2            # corridor gap between rooms
 const CELL := ROOM + GAP  # tile pitch per map row/col
@@ -40,6 +54,7 @@ var _origin: Dictionary = {}       # id -> Vector2i room top-left (incl. ENTRANC
 var _room_cells: Dictionary = {}   # interior Vector2i -> id (stepping it triggers the node)
 var _cleared: Dictionary = {}      # id -> true
 var _sprites: Dictionary = {}      # id -> Sprite2D (a room's map-sprite overlay, if any)
+var _glows: Dictionary = {}        # id -> Sprite2D (a room's per-type glow, if any)
 
 
 func setup(map: Dictionary) -> void:
@@ -100,13 +115,56 @@ func _paint_room(id: int, marker, enemy, node_type := "") -> void:
 				_room_cells[c] = id   # stepping any interior cell triggers the node
 	if marker != null and id != ENTRANCE:
 		_paint(o + Vector2i(2, 2), marker)
+		_paint_glow(id, o + Vector2i(2, 2), node_type)
 		_paint_node_overlay(id, o + Vector2i(2, 2), enemy, node_type)
 
 
-## Draw the most specific art this room has over its generic gem marker: the encounter's
-## monster map sprite (battle/elite/boss) first, else a per-node-type sprite
-## (assets/node_sprites/<type>.png — heal "+", powerup/room chests, teleport pad). With neither,
-## the generated marker tile just stays as-is.
+## Draw the most specific art this room has over its generic gem marker: the encounter's monster
+## map sprite (battle/elite/boss) first, else a per-node-type sprite (assets/node_sprites/<type>.png
+## — now covers every type, including generic battle/elite/boss fallbacks for monsters without map
+## art). With neither, the generated marker tile just stays as-is.
+## A soft, gently-pulsing radial glow beneath a room's marker, tinted by node type (TYPE_GLOW).
+## Drawn at the default depth (z 0) so it sits above the floor tiles but below the marker sprite
+## (z 1) — a negative z_index would sink it behind the TileMapLayer and make it invisible (learned
+## the hard way with the player glow). Uses NORMAL (not additive) blend on purpose: the floor
+## tiles are green, and additive would turn a red glow yellow — normal blend keeps the type colour
+## true so a room reads as its actual kind.
+func _paint_glow(id: int, cell: Vector2i, node_type: String) -> void:
+	if not TYPE_GLOW.has(node_type):
+		return
+	var color: Color = TYPE_GLOW[node_type]
+	var glow := Sprite2D.new()
+	glow.texture = _glow_texture(color)
+	glow.position = tile_map_layer.map_to_local(cell)
+	glow.scale = Vector2.ONE * (float(TILE_SIZE) * GLOW_SPAN / GLOW_TEX)
+	add_child(glow)
+	var tw := create_tween().set_loops()
+	tw.tween_property(glow, "modulate:a", 0.85, 1.0).from(0.5).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(glow, "modulate:a", 0.5, 1.0).set_trans(Tween.TRANS_SINE)
+	_glows[id] = glow
+
+
+## A radial gradient texture: `color` at the centre fading to transparent — built at runtime, so
+## the glow needs no art asset (works under GL Compatibility). Cached per colour.
+static var _glow_cache: Dictionary = {}
+func _glow_texture(color: Color) -> GradientTexture2D:
+	var key := color.to_html()
+	if _glow_cache.has(key):
+		return _glow_cache[key]
+	var grad := Gradient.new()
+	grad.set_color(0, Color(color.r, color.g, color.b, 0.85))
+	grad.set_color(1, Color(color.r, color.g, color.b, 0.0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = GLOW_TEX
+	tex.height = GLOW_TEX
+	_glow_cache[key] = tex
+	return tex
+
+
 func _paint_node_overlay(id: int, cell: Vector2i, enemy, node_type: String) -> void:
 	var tex := MAP_SPRITES.for_monster(enemy)
 	if tex == null:
@@ -167,6 +225,9 @@ func clear_room(id: int) -> void:
 	if _sprites.has(id):
 		_sprites[id].queue_free()
 		_sprites.erase(id)
+	if _glows.has(id):
+		_glows[id].queue_free()
+		_glows.erase(id)
 
 
 func is_cleared(id: int) -> bool:
