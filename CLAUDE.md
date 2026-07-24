@@ -144,6 +144,15 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   **falls back to its flat `tint`**, so the game runs with zero portraits present. Adding art needs
   no generator re-run and no data edit — drop the PNG in and `--import`. See
   `assets/portraits/README.md` for the spec and the id list.
+- **Party roster HUD** (`scripts/roster_hud.gd`, `RosterHud`): a strip along the **bottom of the
+  dungeon screen** — one card per party monster, portrait (flat `tint` fallback) with **HP under
+  it**, coloured green/yellow/red by remaining fraction. On `layer = 15`, so it's above the world but
+  **below** the battle overlay and menus (30). `run.gd` creates it in `_begin_run()` and passes its
+  own `_gs` via `setup(gs)` — **explicit injection, not a `/root/RunState` lookup**, because a global
+  lookup can bind to another test suite's leftover instance (that exact bug cost 4 red tests here).
+  Refresh: `party_changed` covers recruit/merge/permadeath, and `_process` also compares a cheap
+  name+HP signature so plain HP changes (battle damage, heal nodes, +max-HP power-ups) — which emit
+  nothing — still update it.
 - **Debug overlay** (`DebugOverlay` autoload, `F3`): FPS, the party (each monster's HP), battle state,
   player cell + tile data; cheats `H` (toggle hold-to-move) and `K` (set the whole party to 1 HP). It
   finds live nodes via the `player`/`battle` groups, so it works in any scene.

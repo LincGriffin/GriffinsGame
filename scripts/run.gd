@@ -14,6 +14,7 @@ const MOVE_REPO := preload("res://scripts/data/move_repo.gd")
 const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
 const SETTINGS_MENU := preload("res://scripts/settings_menu.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
+const ROSTER_HUD := preload("res://scripts/roster_hud.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 const RUN_HISTORY := preload("res://scripts/data/run_history.gd")
 
@@ -66,6 +67,7 @@ var _sound: Node   # the SoundManager autoload (looked up at runtime; may be nul
 var _rng := RandomNumberGenerator.new()
 var _map: Dictionary = {}
 var _view = null                    # DungeonView (the walkable world)
+var _roster_hud: RosterHud = null   # the party strip along the bottom of the dungeon screen
 var _active_battle: Battle = null
 var _busy := false                  # a node is resolving (battle up, etc.)
 var _ended := false                 # run won/lost; awaiting restart
@@ -136,6 +138,13 @@ func _begin_run() -> void:
 	_view.room_entered.connect(_enter_room)
 	add_child(_view)
 	_view.setup(_map)
+
+	# Party roster strip along the bottom (portrait + HP), rebuilt with each run.
+	if _roster_hud != null:
+		_roster_hud.queue_free()
+	_roster_hud = ROSTER_HUD.new()
+	_roster_hud.setup(_gs)
+	add_child(_roster_hud)
 
 
 ## Roll each battle/elite/boss node's monster up front (rather than on room-entry) so
