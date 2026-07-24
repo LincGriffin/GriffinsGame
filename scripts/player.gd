@@ -53,7 +53,11 @@ func _ready() -> void:
 func _build_glow() -> void:
 	_glow = Sprite2D.new()
 	_glow.name = "Glow"
-	_glow.z_index = -1
+	# NOT z_index = -1: that pushes it behind the TileMapLayer sibling, so the opaque floor tiles
+	# hide it completely (caught by a screenshot — it was invisible in game). Keep it at the
+	# player's own depth and just draw it FIRST among the player's children, so it sits under the
+	# avatar sprite but still above the map.
+	_glow.z_index = 0
 	var grad := Gradient.new()
 	grad.set_color(0, Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5))
 	grad.set_color(1, Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.0))
@@ -69,6 +73,7 @@ func _build_glow() -> void:
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_glow.material = mat
 	add_child(_glow)
+	move_child(_glow, 0)   # draw before the avatar sprite → glow sits under it, above the map
 	var tw := create_tween().set_loops()
 	tw.tween_property(_glow, "scale", Vector2(1.12, 1.12), 0.9).from(Vector2(0.9, 0.9)) \
 		.set_trans(Tween.TRANS_SINE)
