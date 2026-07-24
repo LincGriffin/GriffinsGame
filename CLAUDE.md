@@ -369,6 +369,8 @@ Generators (rebuild content; re-run after changing what they produce):
 - `gen_content.gd` — monster roster → `assets/data/monsters/*.tres` (edit the table there to rebalance)
 - `gen_powerups.gd` — power-up roster → `assets/data/powerups/*.tres` (the upgrades the chooser offers)
 - `gen_upgrade_icons.gd` — placeholder per-effect upgrade icons → `assets/upgrade_icons/*.png`
+- `gen_downscale_sprites.gd` — caps `assets/map_sprites/*.png` at 256px in place (they render at
+  64px; full-res masters live in `reference/source_art/`). See `assets/map_sprites/README.md`.
 
 Quality gates:
 - **`run_tests.gd`** — headless test runner. Discovers `tools/tests/test_*.gd` suites (each
