@@ -23,8 +23,14 @@ func after_each() -> void:
 func test_player_builds_a_glow_aura() -> void:
 	var glow = player.get_node_or_null("Glow")
 	check(glow != null, "the player builds a glow aura node behind the sprite")
-	if glow != null:
-		check(glow.z_index < 0, "the glow renders behind the avatar sprite")
+	if glow == null:
+		return
+	# It must draw UNDER the avatar but still ABOVE the map. A negative z_index would do the
+	# former and break the latter — it sank behind the TileMapLayer and the glow was invisible
+	# in game (caught by a screenshot). Correct invariant: same depth, drawn first.
+	eq(glow.z_index, 0, "the glow stays at the player's depth, so the tilemap can't cover it")
+	eq(player.get_children().find(glow), 0,
+		"the glow is the first child, so it draws beneath the avatar sprite")
 
 
 func test_set_appearance_is_null_safe() -> void:
