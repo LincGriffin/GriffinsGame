@@ -9,6 +9,10 @@ signal party_changed
 
 const PARTY_CAP := 5
 
+## Preloaded (not referenced by class_name) so this autoload compiles regardless of class-cache
+## build order — same reasoning as the /root lookups elsewhere.
+const MONSTER_MERGE := preload("res://scripts/monster_merge.gd")
+
 # The player's chosen starter fights alone against a scaling wild roster early on, so it
 # gets a one-time boost over its base stats (recruits later stay at their base stats).
 const STARTER_HP_MULT := 1.3
@@ -45,14 +49,25 @@ func is_full() -> bool:
 
 
 ## Recruit a defeated wild monster as a fresh, full-HP party member. Returns false
-## (and adds nothing) when the party is already at the cap — Phase 1 simply skips;
-## a later phase adds replace / merge.
+## (and adds nothing) when the party is already at the cap — the caller then offers a
+## merge (see `merge`) to free a slot, or skips the recruit.
 func add_monster(m: MonsterData) -> bool:
 	if is_full():
 		return false
 	party.append(Combatant.from_monster(m))
 	party_changed.emit()
 	return true
+
+
+## Fuse two party members into one (Phase 6 monster merge). Removes both `a` and `b` and appends
+## the fused Combatant, so the party shrinks by one — freeing a slot the caller can then recruit
+## into. Returns the fused monster. See MonsterMerge for the fusion rules.
+func merge(a: Combatant, b: Combatant) -> Combatant:
+	var fused: Combatant = MONSTER_MERGE.fuse(a, b)
+	party = party.filter(func(c): return c != a and c != b)
+	party.append(fused)
+	party_changed.emit()
+	return fused
 
 
 ## Drop any monsters that were knocked out — permadeath for the rest of the run.

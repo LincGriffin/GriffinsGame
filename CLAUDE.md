@@ -103,6 +103,17 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - Winning a wild battle **auto-recruits** the defeated monster (up to `RunState.PARTY_CAP`, currently 5).
   Defeating the **boss (the Hydra)** wins the run; a party wipe shows GAME OVER (press **R** for a fresh
   run + new starter).
+- **Monster merge (Phase 6).** Win a wild/elite fight while the party is **at the cap** and a merge
+  overlay (`scripts/merge_select.gd`, `MergeSelect`) appears: pick **two** party members to fuse into
+  one — freeing a slot — and the new monster is then recruited; **Skip** declines (no recruit, the
+  pre-merge behavior). The fusion is pure/static in `scripts/monster_merge.gd` (`MonsterMerge.fuse`,
+  unit-tested): **stats** = per-stat **max** of the two parents + a small bonus (`HP_MULT`/`ATK_BONUS`/
+  `DEF_BONUS` — never the additive sum); **moves** = the **union** of both movesets, de-duped, capped
+  at `MAX_MOVES`; **identity** = a special parent pair (`scripts/data/fusion_table.gd`, keyed by the
+  two ids sorted) becomes that **specific monster** (its portrait/name), every other pair becomes a
+  generic **"Fused &lt;stronger parent&gt;"** with a blended tint and no portrait (tint fallback).
+  `RunState.merge(a, b)` removes both and appends the fused Combatant (net −1, freeing the slot).
+  Headless `RunHarness` just skips the recruit at cap (no interactive merge).
 - **Roster is tiered (Phase 5).** `MonsterData` carries a `tier` (0 = weakest … 3 = late) and an
   `is_elite` flag. Wild encounters **scale with map depth** — `run.gd` groups the wild pool by tier
   and `_pick_wild(row)` draws a depth-appropriate monster (deeper rows → tougher, with a chance to
