@@ -8,6 +8,8 @@ extends Node
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
 const POWERUP_SELECT := preload("res://scripts/powerup_select.gd")
+const POWERUP_REPO := preload("res://scripts/data/powerup_repo.gd")
+const MOVE_REPO := preload("res://scripts/data/move_repo.gd")
 const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
 const SETTINGS_MENU := preload("res://scripts/settings_menu.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
@@ -309,38 +311,80 @@ func _open_powerup_chooser(id: int) -> void:
 	add_child(sel)
 
 
-## Build the 3 upgrade choices offered by the chooser: two random stat buffs plus a learnable
-## move when one exists (else three stat buffs). Each is a Dictionary the overlay renders and
-## _grant_upgrade() applies.
+## Build the (up to) 3 upgrade choices offered by the chooser, drawn from the DATA-DRIVEN power-up
+## roster (assets/data/powerups/*.tres, editable via the power-up editor dock). Offers a learnable
+## move when one exists plus stat buffs to fill three slots — a mix of "hp/attack/defense or new
+## moves". Each choice is a Dictionary the overlay renders and _grant_upgrade() applies; a "move"
+## power-up whose move nobody can learn (or whose move is missing) is skipped. Falls back to the
+## built-in stat buffs if no power-up data is authored, so a run never breaks.
 func _build_upgrade_options() -> Array:
-	var stats: Array = [
-		{"type": "hp", "amount": UPGRADE_HP, "move": null,
-			"label": "+%d Max HP" % UPGRADE_HP, "desc": "Raise & heal"},
-		{"type": "attack", "amount": UPGRADE_ATK, "move": null,
-			"label": "+%d Attack" % UPGRADE_ATK, "desc": "Hit harder"},
-		{"type": "defense", "amount": UPGRADE_DEF, "move": null,
-			"label": "+%d Defense" % UPGRADE_DEF, "desc": "Take less"},
-	]
+	var pool := POWERUP_REPO.load_all()
+	if pool.is_empty():
+		return _fallback_stat_options()
+	var moves: Array = []
+	var stats: Array = []
+	for p in pool:
+		var opt := _powerup_to_option(p)
+		if opt.is_empty():
+			continue
+		if String(opt["type"]) == "move":
+			moves.append(opt)
+		else:
+			stats.append(opt)
+	_shuffle(moves)
 	_shuffle(stats)
-	var teachable := _teachable_moves()
-	if teachable.is_empty():
-		return stats.slice(0, 3)
-	var mv = teachable[_rng.randi_range(0, teachable.size() - 1)]
-	var move_opt := {"type": "move", "amount": 0, "move": mv,
-		"label": "Learn %s" % mv.display_name, "desc": "New move"}
-	# a move plus two random stat buffs — a mix of "combination of hp/attack/defense or new moves"
-	return [move_opt, stats[0], stats[1]]
-
-
-## Moves in the pool that at least one living monster doesn't already know.
-func _teachable_moves() -> Array:
 	var out: Array = []
-	for mv in MOVE_POOL:
+	if not moves.is_empty():
+		out.append(moves[0])          # always offer a learnable move when one's available
+	for s in stats:                    # fill the rest with stat buffs
+		if out.size() >= 3:
+			break
+		out.append(s)
+	for m in moves.slice(1):           # top up from remaining moves (e.g. an all-move roster)
+		if out.size() >= 3:
+			break
+		out.append(m)
+	if out.is_empty():
+		return _fallback_stat_options()
+	return out
+
+
+## Convert a PowerupData into the option Dictionary the chooser/`_grant_upgrade` use, or {} when
+## it can't be offered (a "move" power-up whose move is missing or already known by everyone).
+func _powerup_to_option(p) -> Dictionary:
+	var opt := {
+		"id": String(p.id), "type": String(p.effect), "amount": int(p.amount),
+		"move": null, "label": String(p.display_name), "desc": String(p.description),
+		"tint": p.tint,
+	}
+	if String(p.effect) == "move":
+		var mv = MOVE_REPO.load_one(String(p.move_id))
+		if mv == null:
+			return {}
+		var learnable := false
 		for c in _gs.living():
 			if not _knows(c, mv):
-				out.append(mv)
+				learnable = true
 				break
-	return out
+		if not learnable:
+			return {}
+		opt["move"] = mv
+	return opt
+
+
+## The built-in stat buffs — used only when no power-up data exists on disk (so a run is safe even
+## with an empty assets/data/powerups/).
+func _fallback_stat_options() -> Array:
+	var stats: Array = [
+		{"id": "", "type": "hp", "amount": UPGRADE_HP, "move": null,
+			"label": "+%d Max HP" % UPGRADE_HP, "desc": "Raise & heal", "tint": Color(0.85, 0.22, 0.28)},
+		{"id": "", "type": "attack", "amount": UPGRADE_ATK, "move": null,
+			"label": "+%d Attack" % UPGRADE_ATK, "desc": "Hit harder", "tint": Color(0.92, 0.55, 0.18)},
+		{"id": "", "type": "defense", "amount": UPGRADE_DEF, "move": null,
+			"label": "+%d Defense" % UPGRADE_DEF, "desc": "Take less", "tint": Color(0.26, 0.5, 0.9)},
+	]
+	_shuffle(stats)
+	return stats.slice(0, 3)
 
 
 ## Apply one upgrade Dictionary to a specific monster (the recipient the player assigned).

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PowerupData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/powerup_data.gd" id="1_15otv"]
+
+[resource]
+script = ExtResource("1_15otv")
+id = "learn_focus"
+display_name = "Learn Focus"
+description = "Teach the move Focus"
+effect = "move"
+amount = 0
+move_id = "focus"
+tint = Color(0.62, 0.36, 0.86, 1)

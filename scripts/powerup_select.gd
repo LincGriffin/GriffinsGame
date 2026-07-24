@@ -13,6 +13,7 @@ signal chosen(upgrade: Dictionary, monster)
 const BUTTON_POLISH := preload("res://scripts/button_polish.gd")
 const PORTRAITS := preload("res://scripts/data/portraits.gd")
 const UPGRADE_ICONS := preload("res://scripts/data/upgrade_icons.gd")
+const POWERUP_ART := preload("res://scripts/data/powerup_art.gd")
 
 var _options: Array = []   # Array[Dictionary] — the 3 offered upgrades
 var _party: Array = []     # living Combatants (recipients)
@@ -78,7 +79,7 @@ func _make_upgrade_card(up: Dictionary) -> Control:
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(art)
-	art.add_child(_make_icon(String(up["type"])))
+	art.add_child(_make_icon(up))
 
 	var label := Label.new()
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -88,9 +89,17 @@ func _make_upgrade_card(up: Dictionary) -> Control:
 	return b
 
 
-func _make_icon(type: String) -> Control:
+## Card art, most-specific first: the power-up's own portrait, then its sprite (both by id,
+## uploaded via the editor), then the per-effect placeholder icon, then a flat swatch.
+func _make_icon(up: Dictionary) -> Control:
 	var size := Vector2(140, 140)
-	var tex := UPGRADE_ICONS.for_type(type)
+	var id := String(up.get("id", ""))
+	var type := String(up["type"])
+	var tex := POWERUP_ART.portrait_for(id)
+	if tex == null:
+		tex = POWERUP_ART.sprite_for(id)
+	if tex == null:
+		tex = UPGRADE_ICONS.for_type(type)
 	if tex != null:
 		var pic := TextureRect.new()
 		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -101,7 +110,7 @@ func _make_icon(type: String) -> Control:
 		return pic
 	var swatch := ColorRect.new()
 	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	swatch.color = UPGRADE_ICONS.color_for(type)
+	swatch.color = up.get("tint", UPGRADE_ICONS.color_for(type))
 	swatch.custom_minimum_size = size
 	return swatch
 
