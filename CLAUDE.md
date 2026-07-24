@@ -240,13 +240,21 @@ one doc written for someone playing rather than building the game.
   `Portraits` above). `dungeon_view.gd` draws it over a battle/elite/boss room's marker tile when
   present (scaled to the 64px tile), falling back to the generic per-type gem otherwise.
 - **Optional per-NODE-TYPE sprite:** `assets/node_sprites/<node type>.png` via
-  `scripts/data/node_sprites.gd` (`NodeSprites.for_type`, same optional-art contract). Ships
-  `heal` (a "+"), `powerup` (gold chest), `room` (wooden chest) and `teleport` (a generated violet
-  rune pad). `dungeon_view.gd::_paint_node_overlay` picks the **most specific** art: monster map
-  sprite → node sprite → the generated gem marker tile. **Swapping is a one-file drop** — put a PNG
-  named after the node type in `assets/node_sprites/` and `--import`; see its README.
-  `tools/gen_node_sprites.gd` rebuilds the shipped set (copies/downscales from the local
-  third-party pack, procedurally draws whatever the pack lacks).
+  `scripts/data/node_sprites.gd` (`NodeSprites.for_type`, same optional-art contract). Ships art for
+  **all 7 types**: `heal` (+), `powerup` (gold chest), `room` (wooden chest), `teleport` (generated
+  rune pad), plus generic `battle` (sword), `elite` (helm), `boss` (axe) **fallbacks** used when the
+  room's monster has no map sprite (e.g. `rat`, `spider`). `dungeon_view.gd::_paint_node_overlay`
+  picks the **most specific** art: monster map sprite → node sprite → the generated gem marker tile.
+  **Swapping is a one-file drop** — put a PNG named after the node type in `assets/node_sprites/` and
+  `--import`; see its README. `tools/gen_node_sprites.gd` rebuilds the shipped set (copies/downscales
+  from the local third-party pack, procedurally draws whatever the pack lacks).
+- **Per-node-type marker glow:** `dungeon_view.gd::_paint_glow` adds a soft, gently-pulsing radial
+  glow behind each room's marker, tinted by node type (`TYPE_GLOW`: red battle / orange elite /
+  magenta boss / green heal / blue power-up / gold treasure / violet teleport) so a room reads as
+  its kind at a glance. **Normal (not additive) blend on purpose** — the floor tiles are green, and
+  additive turns a red glow yellow; normal blend keeps the colour true. Tracked in `_glows`, freed
+  by `clear_room` alongside the sprite. z 0 (above the tilemap, below the z-1 marker sprite) — a
+  negative z_index would sink it behind the TileMapLayer (the exact player-glow bug).
 - **Retired but kept in repo:** `scripts/map/map_view.gd` (the old clickable node-map) and
   `scripts/room.gd` / `scenes/map/room.tscn` (the standalone treasure room — treasure now resolves in
   place). `overworld.gd` / `overworld.tscn` remain the movement test fixture (`test_overworld.gd`).

@@ -24,6 +24,11 @@ const SOURCES := {
 	"heal": "GUI/icon/plus_regular.png",                  # a clean "+"
 	"powerup": "Icons/Chests/chest_005_gold_closed.png",  # treasure: gold chest
 	"room": "Icons/Chests/chest_001_wooden_closed.png",   # treasure: plain wooden chest
+	# Generic FALLBACKS for battle/elite/boss rooms whose monster has no map sprite (e.g. rat,
+	# spider). When the monster does have art, dungeon_view prefers it over these.
+	"battle": "Icons/Weapons/weapons_001_sword.png",      # a sword
+	"elite": "Icons/Armor/armor_008_helmet.png",          # a warrior's helm
+	"boss": "Icons/Weapons/weapons_005_axe.png",          # a heavy axe
 }
 
 

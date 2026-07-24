@@ -62,6 +62,16 @@ func test_cleared_room_is_walkthrough_and_silent() -> void:
 	check(not fired.hit, "a cleared room does not retrigger")
 
 
+func test_rooms_get_a_per_type_glow_that_clears_with_the_room() -> void:
+	# Every node type has a glow colour, so every non-entrance room should have a glow node.
+	check(_view._glows.size() == _map["nodes"].size(),
+		"each map room gets a per-type glow (%d rooms)" % _map["nodes"].size())
+	var id: int = int(_map["nodes"][0]["id"])
+	check(_view._glows.has(id), "the room has a glow before it's cleared")
+	_view.clear_room(id)
+	check(not _view._glows.has(id), "clearing the room removes its glow too")
+
+
 func test_warp_relocates_the_player() -> void:
 	var player = _view.player
 	var id: int = int(_map["boss"])

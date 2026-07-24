@@ -9,7 +9,12 @@ type>.png`, looked up at runtime by `scripts/data/node_sprites.gd` (`NodeSprites
 | `powerup.png` | power-up | a gold treasure chest |
 | `room.png` | treasure room | a wooden chest |
 | `teleport.png` | teleport pad | a generated violet rune pad |
-| `battle` / `elite` / `boss` | encounters | *(none — these use the monster's own map sprite)* |
+| `battle.png` | battle | a sword — **fallback** when the room's monster has no map sprite |
+| `elite.png` | elite | a warrior's helm — same fallback role |
+| `boss.png` | boss | a heavy axe — same fallback role |
+
+> battle/elite/boss prefer the encounter monster's own `assets/map_sprites/<id>.png`; the sprites
+> above are only shown when that monster has no map art (e.g. `rat`, `spider`).
 
 ## How the art is chosen
 
