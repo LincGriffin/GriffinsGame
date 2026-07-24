@@ -80,6 +80,15 @@ func test_warp_relocates_the_player() -> void:
 		"warp drops the player just below the target room's marker")
 
 
+func test_tilemap_has_the_height_gradient_shader() -> void:
+	var mat = _view.tile_map_layer.material
+	check(mat is ShaderMaterial, "the tilemap gets a ShaderMaterial for the height gradient")
+	if mat is ShaderMaterial:
+		var top = mat.get_shader_parameter("y_top")
+		var bottom = mat.get_shader_parameter("y_bottom")
+		check(bottom > top, "the gradient spans a real vertical range (y_bottom below y_top)")
+
+
 # --- helpers ---
 
 ## Flood-fill the set of cells reachable on foot (4-connected) from `start`.
