@@ -13,6 +13,7 @@ signal room_entered(id: int)
 
 const PLAYER_SCENE := preload("res://scenes/overworld/player.tscn")
 const TILESET := preload("res://assets/tilesets/dungeon_tileset.tres")
+const TILE_GRADIENT := preload("res://assets/shaders/tile_gradient.gdshader")
 const MAP_SPRITES := preload("res://scripts/data/map_sprites.gd")
 const NODE_SPRITES := preload("res://scripts/data/node_sprites.gd")
 const SOURCE_ID := 0
@@ -68,6 +69,8 @@ func setup(map: Dictionary) -> void:
 		for t in n["to"]:
 			_carve_corridor(int(n["id"]), int(t))
 
+	_apply_height_gradient()
+
 	# Spawn the player in the entrance room; the Camera2D in player.tscn follows.
 	player = PLAYER_SCENE.instantiate()
 	player.name = "Player"
@@ -75,6 +78,24 @@ func setup(map: Dictionary) -> void:
 	player.tile_map_layer = tile_map_layer
 	player.snap_to_cell(_center(ENTRANCE))
 	player.moved.connect(_on_player_moved)
+
+
+## Tint the whole tilemap with a world-anchored vertical gradient (cool at the bottom → warm at the
+## higher nodes) via a ShaderMaterial. y_top/y_bottom are the map's world-Y extent across every
+## room so the ramp spans the full dungeon. Only the floor/wall tilemap is shaded — the marker
+## glow/sprites are separate nodes and keep their own colours.
+func _apply_height_gradient() -> void:
+	var top_y := INF
+	var bottom_y := -INF
+	for id in _origin:
+		var o: Vector2i = _origin[id]
+		top_y = minf(top_y, tile_map_layer.map_to_local(o).y)
+		bottom_y = maxf(bottom_y, tile_map_layer.map_to_local(o + Vector2i(0, ROOM - 1)).y)
+	var mat := ShaderMaterial.new()
+	mat.shader = TILE_GRADIENT
+	mat.set_shader_parameter("y_top", top_y)
+	mat.set_shader_parameter("y_bottom", bottom_y)
+	tile_map_layer.material = mat
 
 
 # Row 0 sits at the bottom, boss at the top; the entrance (row -1) is below row 0.
