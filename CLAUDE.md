@@ -184,20 +184,24 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **Deferred** (kept for later): real Magna-Tiles floor/wall **art assets** (this dungeon uses the
   generated tiles), a power-up / target chooser, and a rest-vs-treasure split.
 
-### Content tooling: the monster editor
+### Content tooling: the editor docks
 
-- **`addons/monster_editor/`** is a Godot **EditorPlugin** — a dock (left panel, "Monsters") for
-  adding / duplicating / editing / deleting roster monsters **without hand-editing
-  `tools/gen_content.gd`**. It's enabled by default via `project.godot`'s `[editor_plugins]`
-  (written by `gen_project.gd`) and only runs **inside the Godot editor GUI**; it has no effect on
-  the shipped game and isn't part of the headless build/test pipeline.
-- **All CRUD/validation logic lives outside the plugin**, so it's unit-testable headless:
+Two Godot **EditorPlugin** docks, both enabled by default via `project.godot`'s `[editor_plugins]`
+(written by `gen_project.gd`), both **inside the Godot editor GUI only** — no effect on the shipped
+game, not part of the headless build/test pipeline. Each is a thin UI shell (built in code, no
+`.tscn`) over a headless-testable repo; **all CRUD/validation lives in the repo**, not the plugin.
+
+- **Monster editor** — `addons/monster_editor/` (dock "Monsters"): add / duplicate / edit / delete
+  roster monsters without hand-editing `tools/gen_content.gd`. Backed by
   `scripts/data/monster_repo.gd` (`MonsterRepo` — list/load/create/save/delete + id-format and
   uniqueness validation over `assets/data/monsters/*.tres`, every function takes an optional `dir`
-  so tests point at a scratch directory instead of the real roster) and
-  `scripts/data/move_repo.gd` (`MoveRepo` — read-only listing of `assets/data/moves/*.tres`, used
-  to populate the moveset picker). `addons/monster_editor/monster_editor_dock.gd` is a thin UI
-  shell over both, built in code (no `.tscn`, same convention as `starter_select.gd`).
+  so tests point at a scratch directory). Uses `MoveRepo`'s listing to offer moves for a monster's
+  moveset.
+- **Move editor** — `addons/move_editor/` (dock "Moves"): add / duplicate / edit / delete battle
+  moves (id, display name, **kind** picked from `MoveRepo.KINDS` so it can't drift from what
+  `battle.gd` resolves, power, description) without hand-editing `tools/gen_moves.gd`. Backed by
+  `scripts/data/move_repo.gd` (`MoveRepo` — same CRUD/validation shape as `MonsterRepo`, optional
+  `dir`; its read-only `list_ids`/`load_all` are still what the monster dock's move picker uses).
 - **Portrait / map-sprite linking:** the dock has a Browse/Clear row for each optional art
   convention (`assets/portraits/<id>.png`, `assets/map_sprites/<id>.png`) via
   `scripts/data/asset_link.gd` (`AssetLink.import_image`/`clear_image` — copies a picked file to

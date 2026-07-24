@@ -25,7 +25,10 @@ func _init() -> void:
 	# Editor-only tooling. Has no effect on the shipped game (EditorPlugin scripts only run
 	# inside the Godot editor), but enabling it here means it's on by default in any clone.
 	ProjectSettings.set_setting("editor_plugins/enabled",
-		PackedStringArray(["res://addons/monster_editor/plugin.cfg"]))
+		PackedStringArray([
+			"res://addons/monster_editor/plugin.cfg",
+			"res://addons/move_editor/plugin.cfg",
+		]))
 
 	var err := ProjectSettings.save()
 	assert(err == OK, "ProjectSettings.save failed")
