@@ -8,6 +8,7 @@ extends Node
 const BATTLE_SCENE := preload("res://scenes/battle/battle.tscn")
 const STARTER_SELECT := preload("res://scripts/starter_select.gd")
 const POWERUP_SELECT := preload("res://scripts/powerup_select.gd")
+const MERGE_SELECT := preload("res://scripts/merge_select.gd")
 const POWERUP_REPO := preload("res://scripts/data/powerup_repo.gd")
 const MOVE_REPO := preload("res://scripts/data/move_repo.gd")
 const TITLE_SCREEN := preload("res://scripts/title_screen.gd")
@@ -205,6 +206,9 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 		Battle.Result.PLAYER_WON:
 			if enemy.is_boss:
 				_win()
+			elif _gs.is_full():
+				# Party's full — offer a merge to make room (or skip the recruit).
+				_open_merge_prompt(id, enemy)
 			else:
 				if _gs.add_monster(enemy):
 					_recruited.append(String(enemy.id))
@@ -215,6 +219,35 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 			# Stay put in the (uncleared) room; step out and back to re-engage.
 			_busy = false
 			_view.set_walking(true)
+
+
+## Party-full recruit: pop the merge overlay. On Merge, fuse the two picks (freeing a slot) and
+## recruit the new monster; on Skip, keep the party as-is and don't recruit. Either way the elite
+## heal (if any) still applies, then the room clears. Headless-safe: with no live view it just
+## skips the recruit, matching the pre-merge behavior.
+func _open_merge_prompt(id: int, enemy: MonsterData) -> void:
+	if _view == null:
+		if enemy.is_elite:
+			_heal_party()
+		_advance(id)
+		return
+	_view.set_walking(false)
+	var sel: MergeSelect = MERGE_SELECT.new()
+	sel.setup(_gs.living(), enemy)
+	sel.merged.connect(func(a, b):
+		_gs.merge(a, b)
+		if _gs.add_monster(enemy):
+			_recruited.append(String(enemy.id))
+		if enemy.is_elite:
+			_heal_party()
+		sel.queue_free()
+		_advance(id))
+	sel.skipped.connect(func():
+		if enemy.is_elite:
+			_heal_party()
+		sel.queue_free()
+		_advance(id))
+	add_child(sel)
 
 
 ## Clear a resolved room and hand movement back to the player.

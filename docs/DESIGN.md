@@ -99,13 +99,19 @@ finding better monsters). When your party is **at the cap**, instead of only rep
 total stats** and a **new set of moves**. It rewards *filling* the roster rather than hoarding
 duplicates, and stays consistent with "power comes from collection."
 
-*Deferred to Phase 6 (`feat/monster-merge`); needs the party/cap system (Phase 1) and moves
-(Phase 3).* Sub-questions to lock when built:
+**Built in Phase 6 (`feat/monster-merge`).** The sub-questions were locked as:
 
-- How many combine (default **2 → 1**), and what sets the result's identity / name / appearance?
-- Stat bump: flat vs percentage, and **capped** so it stays "small" (not the additive sum of both).
-- New moves: **randomly rolled**, **blended** from the parents, or from a **fixed fusion table**?
-- Available only at the cap, or anytime (e.g., a dedicated Merge/Rest node)?
+- **2 → 1**, triggered **at the cap on recruit** (win a fight with a full party → a `MergeSelect`
+  overlay; fuse two to free a slot, then recruit the new monster, or Skip to decline).
+- **Identity:** a **`FusionTable`** (`scripts/data/fusion_table.gd`) maps a few special parent pairs
+  to a **distinct monster** (that monster's name/portrait); every other pair becomes a generic
+  **"Fused &lt;stronger parent&gt;"** with a blended tint and no portrait.
+- **Stats:** the **per-stat max** of the two parents + a small bonus (`HP_MULT`/`ATK_BONUS`/
+  `DEF_BONUS` in `MonsterMerge`) — capped, never the additive sum.
+- **Moves:** the **union** of both movesets, de-duplicated, capped at `MAX_MOVES`.
+
+A dedicated Merge node (merging anytime, not just at the cap) is a possible later extension; for now
+it's the at-cap flow only.
 
 ## Moves (combat depth — a later phase)
 
@@ -214,7 +220,7 @@ skeleton with placeholder fights first — flagged.)*
 | **3** ✅ | `feat/moves` | `MoveData` + `gen_moves`, per-monster **movesets**, richer command menu; power-up nodes can now grant **new moves**. | 1 (2 for move-granting nodes) |
 | **4** ✅ | `feat/magna-tiles-art` | Unified **Magna-Tiles** restyle across room tiles, map nodes/paths, and battle backdrop; translucent sprites. | 2 |
 | **5** ✅ | `feat/content-balance` | **12-monster roster with difficulty tiers** (wild encounters scale with map depth), **new move kinds** (drain lifesteal, focus buff, slam), an **Elite node** type (recruit + heal), the **Hydra** final boss (the Griffin becomes an elite), and the **Chicken** starter. Added tests. | 2, 3 |
-| **6** | `feat/monster-merge` | **Monster merging** — at the cap, combine two monsters into one for a small total-stat bump + a new moveset (a third option beside replace/skip). | 1, 3 |
+| **6** ✅ | `feat/monster-merge` | **Monster merging** — win at the party cap → a merge overlay (`MergeSelect`) fuses two party members into one (per-stat max + small bonus; union of both movesets; a `FusionTable` turns special pairs into a distinct monster, others become a generic "Fused") to free a slot for the new recruit; Skip declines. Pure logic in `MonsterMerge`. | 1, 3 |
 | **7** ✅ | `feat/walkable-dungeon` | **Walkable dungeon traversal** — the branching map is rendered as **rooms + corridors** and walked with the keyboard (`dungeon_view.gd`), replacing the clickable node-map. Fully open & backtrackable (reach every node); node types resolve on room-entry; distinct **marker props** per type. | 2, 4 |
 | **8** ✅ | `feat/dungeon-art` | **Stained-glass tile art** — searched for CC0 packs (none matched, see below) and instead rebuilt the generated tiles at **64px** as true Magna-Tiles panels: beveled plastic frame, translucent backlit glass, specular sheen, faceted gem markers. | 4, 7 |
 | **9** ✅ | `feat/monster-portraits` | **Monster portraits** — optional per-monster art (`assets/portraits/<id>.png`, 256×256) on the starter-select cards, the battle enemy area, and the lead/switch buttons, with a **flat-tint fallback** so missing art never breaks a screen. Art is author-supplied (classic D&D monster style); the pipeline needs no generator re-run. | 1 |
