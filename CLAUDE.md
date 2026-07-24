@@ -15,6 +15,10 @@ Renderer: GL Compatibility. Physics: Jolt.
 auto-recruited monsters, one-active-fighter battles, Magna-Tiles art) and the phased build order
 live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 
+**Player-facing rules:** `docs/HOW_TO_PLAY.md` is the plain-text player guide (controls, room types,
+move effects, recruiting/merging, win-lose). Keep it in sync when a gameplay rule changes — it's the
+one doc written for someone playing rather than building the game.
+
 ### Layout
 - `scenes/{overworld,battle,ui}` — scenes. Overworld movement lives in `scenes/overworld/`.
 - `scripts/` — GDScript. `player.gd`, `overworld.gd` implemented.
