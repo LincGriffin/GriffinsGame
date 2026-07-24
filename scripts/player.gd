@@ -11,6 +11,12 @@ extends CharacterBody2D
 const TILE_SIZE := 64          # kept for reference; positioning uses map_to_local
 const MOVE_TIME := 0.12        # seconds to glide one tile
 
+const MAP_SPRITES := preload("res://scripts/data/map_sprites.gd")
+const PORTRAITS := preload("res://scripts/data/portraits.gd")
+const GLOW_COLOR := Color(1.0, 0.88, 0.42)   # a warm "this is you" aura under the avatar
+
+var _glow: Sprite2D
+
 ## Injected by the Overworld so the player can ask the map what's walkable.
 @export var tile_map_layer: TileMapLayer
 
@@ -39,6 +45,51 @@ const DIRECTIONS := {
 func _ready() -> void:
 	add_to_group("player")   # so the debug overlay can find the player in any scene
 	_sound = get_node_or_null("/root/SoundManager")
+	_build_glow()
+
+
+## A soft, gently-pulsing radial aura rendered BEHIND the avatar — marks the sprite as the player
+## (built at runtime so it needs no art asset; additive blend works under GL Compatibility).
+func _build_glow() -> void:
+	_glow = Sprite2D.new()
+	_glow.name = "Glow"
+	_glow.z_index = -1
+	var grad := Gradient.new()
+	grad.set_color(0, Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5))
+	grad.set_color(1, Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 112
+	tex.height = 112
+	_glow.texture = tex
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_glow.material = mat
+	add_child(_glow)
+	var tw := create_tween().set_loops()
+	tw.tween_property(_glow, "scale", Vector2(1.12, 1.12), 0.9).from(Vector2(0.9, 0.9)) \
+		.set_trans(Tween.TRANS_SINE)
+	tw.tween_property(_glow, "scale", Vector2(0.9, 0.9), 0.9).set_trans(Tween.TRANS_SINE)
+
+
+## Show `monster`'s overworld art (its map sprite; falls back to portrait, then the default
+## player.png) as the avatar. Called by the dungeon when the lead monster changes.
+func set_monster_appearance(monster) -> void:
+	var sprite := get_node_or_null("Sprite2D")
+	if sprite == null or monster == null:
+		return
+	var tex = MAP_SPRITES.for_monster(monster)
+	if tex == null:
+		tex = PORTRAITS.for_monster(monster)
+	if tex == null:
+		return   # no art for this monster → keep the default sprite
+	sprite.texture = tex
+	var largest: int = max(tex.get_width(), tex.get_height())
+	if largest > 0:
+		sprite.scale = Vector2.ONE * (float(TILE_SIZE) / largest)
 
 
 func _physics_process(_delta: float) -> void:

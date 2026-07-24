@@ -165,8 +165,12 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **Each node is a small room; each edge a short corridor.** `dungeon_view.gd` lays the DAG out
   spatially (row 0 at the bottom, boss at the top, a spawn **entrance** below row 0), paints a
   distinct **marker prop** in each room's center (per node type), and follows the player with the
-  `Camera2D` from `player.tscn`. The **whole dungeon is open and connected** — you can **backtrack
-  and eventually reach every node**. Stepping into an *uncleared* room emits
+  `Camera2D` from `player.tscn`. The **player avatar shows its lead monster's art** — `run.gd`'s
+  `_update_player_avatar()` (re-run on `RunState.party_changed`) calls `player.set_monster_appearance`
+  with `party[0].source`, so the avatar wears the lead monster's **map sprite** (portrait fallback,
+  else the default `player.png`), under a soft pulsing **glow aura** (`player.gd::_build_glow`, a
+  runtime radial `GradientTexture2D`, additive) that marks it as the player. The **whole dungeon is
+  open and connected** — you can **backtrack and eventually reach every node**. Stepping into an *uncleared* room emits
   `DungeonView.room_entered(id)`; once resolved the room is cleared (marker → floor) and becomes
   walk-through. `run.gd` reuses all its node resolution (`_do_battle` / `_pick_wild(row)` /
   `_pick_elite` / `_heal_party` / `_apply_powerup` / win-lose); it pauses movement
