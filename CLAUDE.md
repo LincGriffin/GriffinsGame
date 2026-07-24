@@ -61,15 +61,18 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   The command menu lists the active monster's **moves**, a **Switch** command (shown whenever another
   living monster is available), and Flee — **currently hidden** behind `Battle.FLEE_ENABLED := false`
   (flip it back on to restore it; `_on_flee`/`FLEE_CHANCE`/its sfx hook are all still intact). Move
-  **kinds** (data-driven, effect not element): `attack`, `guard` (halve next hit), `evade` (the
-  next hit deals 0 damage), `reflect` (the next hit is redirected to its attacker instead), `heal`,
-  `drain` (attack that heals the user **3/8** of the damage dealt — half, reduced 25%), `buff` (raise the user's `atk_bonus` for
-  the battle; reset on switch-in), `stun` (an attack that also skips the target's next turn), and
-  `reckless` (a heavy attack that also damages its own user — `floor(dmg/4)`, min 1). `guard` /
-  `evade` / `reflect` are one-shot stances: set on cast, consumed by the very next incoming hit (or
-  expire — cleared alongside `defending` whenever the command menu comes back up), and evaded/
-  reflected hits skip every secondary effect (no drain-heal, no stun, no recoil) — only the
-  0-damage/redirect itself happens. `stunned` is different: inflicted BY an opponent's `stun` move,
+  **kinds** (data-driven, effect not element): `attack`, `guard` (halve the next hit), `evade` (the
+  next hit deals 0 damage), `reflect` (**thorns**: you STILL take the hit AND deal the same damage
+  back to the attacker), `heal`, `drain` (attack that heals the user **3/8** of the damage dealt —
+  half, reduced 25%), `buff` (raise the user's `atk_bonus` for the battle; reset on switch-in),
+  `stun` (an attack with a **`STUN_CHANCE` (50%)** chance to also skip the target's next turn), and
+  `reckless` (a heavy attack that also damages its own user — `floor(dmg/4)`, min 1). **`guard` and
+  `evade` also grant a one-shot `counter_bonus` (`COUNTER_ATK`)** — added to the caster's *next*
+  attack, then cleared (turtle-then-strike), on top of their mitigation. `guard` / `evade` /
+  `reflect` are one-shot stances: set on cast, consumed by the very next incoming hit (or expire —
+  cleared alongside `defending` whenever the command menu comes back up), and evaded/reflected hits
+  skip every secondary effect (no drain-heal, no stun, no recoil) — only the 0-damage (evade) or
+  mutual-damage (reflect) itself happens. `stunned` is different: inflicted BY an opponent's `stun` move,
   checked and cleared at the start of the stunned side's own next turn (`_begin_player_command`/
   `_enemy_turn`), skipping it entirely — this can land mid-round (if the stunning side is faster)
   or next round (if slower), whichever the natural turn order produces. Enemies pick a random
