@@ -14,6 +14,7 @@ var speed: int
 var is_boss: bool = false
 var defending := false
 var atk_bonus := 0               # temporary attack buff (from "buff" moves); reset each battle/switch-in
+var counter_bonus := 0           # one-shot attack bonus from guard/evade — added to the NEXT attack, then cleared
 var source: MonsterData = null   # the static def this came from (null for make())
 var moves: Array = []            # Array[MoveData] — copied so run-time grants don't touch the resource
 
