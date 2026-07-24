@@ -34,3 +34,7 @@ Desktop.ini
 # Editor/IDE folders (uncomment whichever you use)
 .vscode/
 # .idea/
+
+# Third-party asset packs (local source library). Not redistributed — the game only
+# commits the few derived sprites it actually uses (see assets/node_sprites/README.md).
+/assets/thirdparty/

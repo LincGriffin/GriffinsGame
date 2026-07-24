@@ -26,6 +26,19 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
 - **Tile size is 64px** and the player `Camera2D` is at **zoom 1** — together these render the same
   on-screen size the old 32px-at-zoom-2 art did, with 4× the pixel detail. Changing one without the
   other rescales the whole game.
+- **Asset licensing — this is a NON-COMMERCIAL game.** When sourcing art/audio, licenses limited to
+  **non-commercial use are acceptable** (a much wider pool than CC0-only). But non-commercial status
+  does **not** waive the other terms, which must be checked separately: **redistribution/repackaging**
+  limits (why `assets/thirdparty/` is gitignored — see below), **attribution** (CC-BY still needs
+  credit), **no-AI-training** clauses, and whether **modification** is permitted. Rule of thumb:
+  keep whole packs local/gitignored, commit only the small derived game-ready copies, and record the
+  source + license in the relevant `assets/<kind>/README.md`.
+- `assets/thirdparty/` — **local third-party asset packs, gitignored and `.gdignore`d.** Vendored
+  source art (e.g. the Spirit Claw "Claw&Blade" pack) whose license permits *using and modifying*
+  the art in a game but **not redistributing/repackaging the pack** — so the repo commits only the
+  few derived sprites the game actually uses (`assets/node_sprites/`), never the pack. The
+  `.gdignore` also keeps Godot from importing ~1100 unused files (and `doctor.gd` skips it too).
+  Same masters-vs-copies rule as `reference/`.
 - `autoload/` — singletons: `RunState`, `SoundManager`, `DebugOverlay`.
 - `tools/` — reproducible **generator scripts** (see below). Not shipped in gameplay.
 
@@ -193,6 +206,14 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   `scripts/data/map_sprites.gd` (`MapSprites`, same optional-art/memoised-cache contract as
   `Portraits` above). `dungeon_view.gd` draws it over a battle/elite/boss room's marker tile when
   present (scaled to the 64px tile), falling back to the generic per-type gem otherwise.
+- **Optional per-NODE-TYPE sprite:** `assets/node_sprites/<node type>.png` via
+  `scripts/data/node_sprites.gd` (`NodeSprites.for_type`, same optional-art contract). Ships
+  `heal` (a "+"), `powerup` (gold chest), `room` (wooden chest) and `teleport` (a generated violet
+  rune pad). `dungeon_view.gd::_paint_node_overlay` picks the **most specific** art: monster map
+  sprite → node sprite → the generated gem marker tile. **Swapping is a one-file drop** — put a PNG
+  named after the node type in `assets/node_sprites/` and `--import`; see its README.
+  `tools/gen_node_sprites.gd` rebuilds the shipped set (copies/downscales from the local
+  third-party pack, procedurally draws whatever the pack lacks).
 - **Retired but kept in repo:** `scripts/map/map_view.gd` (the old clickable node-map) and
   `scripts/room.gd` / `scenes/map/room.tscn` (the standalone treasure room — treasure now resolves in
   place). `overworld.gd` / `overworld.tscn` remain the movement test fixture (`test_overworld.gd`).
@@ -380,6 +401,8 @@ Generators (rebuild content; re-run after changing what they produce):
 - `gen_content.gd` — monster roster → `assets/data/monsters/*.tres` (edit the table there to rebalance)
 - `gen_powerups.gd` — power-up roster → `assets/data/powerups/*.tres` (the upgrades the chooser offers)
 - `gen_upgrade_icons.gd` — placeholder per-effect upgrade icons → `assets/upgrade_icons/*.png`
+- `gen_node_sprites.gd` — per-node-type map art → `assets/node_sprites/*.png` (copies/downscales
+  from the local `assets/thirdparty/` pack; draws the teleport pad procedurally)
 - `gen_downscale_sprites.gd` — caps `assets/map_sprites/*.png` at 256px in place (they render at
   64px; full-res masters live in `reference/source_art/`). See `assets/map_sprites/README.md`.
 
@@ -391,7 +414,8 @@ Quality gates:
   "Testing infrastructure: BattleHarness" above) — safe because discovery only picks up
   `test_*.gd` filenames.
 - **`doctor.gd`** — project health check: file-named directories, unset/missing `main_scene`, and any
-  `.gd`/`.tscn`/`.tres` that fails to load.
+  `.gd`/`.tscn`/`.tres` that fails to load. Skips any folder containing a **`.gdignore`** (so
+  vendored third-party packs aren't scanned — they're not ours to health-check).
 - **`hooks/`** — git hooks. `pre-commit` blocks committing directly on `main`; `pre-push` imports then
   runs doctor + tests. Install once per clone: `git config core.hooksPath tools/hooks`. Bypass with
   `--no-verify`; point at Godot with `GODOT=... git push`.

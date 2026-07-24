@@ -40,6 +40,10 @@ func _scan(root: String) -> void:
 			if SKIP_DIRS.has(sub):
 				continue
 			var sub_path := dir_path.path_join(sub)
+			# Respect Godot's own .gdignore — vendored third-party packs (assets/thirdparty/) are
+			# excluded from the engine's import, so they're not ours to health-check either.
+			if FileAccess.file_exists(sub_path.path_join(".gdignore")):
+				continue
 			_dirs.append(sub_path)
 			stack.append(sub_path)
 		for f in da.get_files():
