@@ -91,7 +91,18 @@ func _ready() -> void:
 	if _gs == null:
 		return   # headless / test context: no live run
 	_sound = get_node_or_null("/root/SoundManager")
+	_gs.party_changed.connect(_update_player_avatar)   # keep the map avatar on the lead monster
 	_show_title_screen()
+
+
+## Show the lead monster's art (with the player glow) as the dungeon avatar. Safe to call any
+## time — no-ops when there's no live view or party yet; re-runs whenever the party changes.
+func _update_player_avatar() -> void:
+	if _view == null or _view.player == null or _gs.party.is_empty():
+		return
+	var lead: Combatant = _gs.party[0]
+	if lead.source != null:
+		_view.player.set_monster_appearance(lead.source)
 
 
 func _show_title_screen() -> void:
@@ -136,6 +147,7 @@ func _begin_run() -> void:
 	_view.room_entered.connect(_enter_room)
 	add_child(_view)
 	_view.setup(_map)
+	_update_player_avatar()   # dress the spawned player as the lead monster
 
 
 ## Roll each battle/elite/boss node's monster up front (rather than on room-entry) so
