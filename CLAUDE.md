@@ -202,6 +202,14 @@ live in `docs/DESIGN.md`. Consult it before starting a new gameplay feature.
   `_pick_elite()` / the fixed `BOSS_ENEMY`). `_enter_room` just reads `node["enemy"]` — this exists
   so `DungeonView` can show a **monster-specific map sprite** ahead of time (see below) and so
   fleeing and re-entering a fight shows the same monster rather than a fresh reroll.
+- **Encounters are UNIQUE per map.** `_assign_encounters` threads a `used` dict (monster id → true)
+  through every `_pick_wild(row, used)` / `_pick_elite(used)`, so no monster appears twice on a map.
+  Each picker filters its depth-appropriate pool to unused monsters, **widens** to the whole wild
+  pool if that tier is spent, and only **repeats as a last resort** once the roster is genuinely
+  exhausted (never leaves a node without an enemy). **Roster headroom matters:** a generated map has
+  roughly **10–13 battle nodes** but `WILD_ENEMIES` currently holds **9**, so the tail repeats today
+  — adding more low-tier monsters raises the ceiling and is the intended fix (keeps map size the
+  same). `test_unique_encounters.gd` pins both the uniqueness and the exhaustion fallback.
 - **Optional per-monster map sprite:** `assets/map_sprites/<id>.png`, looked up by
   `scripts/data/map_sprites.gd` (`MapSprites`, same optional-art/memoised-cache contract as
   `Portraits` above). `dungeon_view.gd` draws it over a battle/elite/boss room's marker tile when

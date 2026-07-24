@@ -141,13 +141,18 @@ func _begin_run() -> void:
 ## Roll each battle/elite/boss node's monster up front (rather than on room-entry) so
 ## DungeonView can show a monster-specific map sprite on the marker when one exists
 ## (scripts/data/map_sprites.gd), and so re-entering a fled fight shows the same monster.
+## Encounters are UNIQUE across a map: `used` (monster id -> true) is threaded through every pick
+## so no monster shows up twice. The wild pool is small (and tier-0 especially so), so a big map can
+## still exhaust it — the pickers widen and then, only as a last resort, allow a repeat rather than
+## leaving a node without an enemy. Adding more low-tier monsters raises the ceiling.
 func _assign_encounters() -> void:
+	var used: Dictionary = {}
 	for n in _map["nodes"]:
 		match n["type"]:
 			"battle":
-				n["enemy"] = _pick_wild(int(n["row"]))
+				n["enemy"] = _pick_wild(int(n["row"]), used)
 			"elite":
-				n["enemy"] = _pick_elite()
+				n["enemy"] = _pick_elite(used)
 			"boss":
 				n["enemy"] = BOSS_ENEMY
 
@@ -457,7 +462,10 @@ func _build_wild_index() -> void:
 
 ## Pick a wild monster whose tier suits the node's depth: deeper rows draw tougher
 ## monsters, with a chance to draw one tier easier for variety.
-func _pick_wild(row: int) -> MonsterData:
+## `used` (monster id -> true) keeps a map's encounters unique: the depth-appropriate pool is
+## filtered to monsters not yet used, then widened to the whole wild pool, and only as a LAST
+## RESORT (roster exhausted) is a repeat allowed. The chosen monster is marked used.
+func _pick_wild(row: int, used: Dictionary = {}) -> MonsterData:
 	var normal_rows: int = maxi(1, int(_map.get("rows", 7)) - 1)   # rows 0..normal_rows-1
 	var band := clampi(int(row * (_max_tier + 1) / normal_rows), 0, _max_tier)
 	if band > 0 and _rng.randf() < 0.35:
@@ -465,11 +473,29 @@ func _pick_wild(row: int) -> MonsterData:
 	while band >= 0 and not _wild_by_tier.has(band):
 		band -= 1
 	var pool: Array = _wild_by_tier.get(maxi(band, 0), WILD_ENEMIES)
-	return pool[_rng.randi_range(0, pool.size() - 1)]
+	var pick = _pick_unused(pool, used)
+	if pick == null:
+		pick = _pick_unused(WILD_ENEMIES, used)   # this tier is spent — widen before repeating
+	if pick == null:
+		pick = pool[_rng.randi_range(0, pool.size() - 1)]   # whole roster spent → allow a repeat
+	used[String(pick.id)] = true
+	return pick
 
 
-func _pick_elite() -> MonsterData:
-	return ELITE_ENEMIES[_rng.randi_range(0, ELITE_ENEMIES.size() - 1)]
+func _pick_elite(used: Dictionary = {}) -> MonsterData:
+	var pick = _pick_unused(ELITE_ENEMIES, used)
+	if pick == null:
+		pick = ELITE_ENEMIES[_rng.randi_range(0, ELITE_ENEMIES.size() - 1)]
+	used[String(pick.id)] = true
+	return pick
+
+
+## A random monster from `pool` whose id isn't in `used`, or null when they're all taken.
+func _pick_unused(pool: Array, used: Dictionary):
+	var free: Array = pool.filter(func(m): return not used.has(String(m.id)))
+	if free.is_empty():
+		return null
+	return free[_rng.randi_range(0, free.size() - 1)]
 
 
 func _win() -> void:
