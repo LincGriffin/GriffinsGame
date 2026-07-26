@@ -12,6 +12,9 @@ const PARTY_CAP := 5
 ## Preloaded (not referenced by class_name) so this autoload compiles regardless of class-cache
 ## build order — same reasoning as the /root lookups elsewhere.
 const MONSTER_MERGE := preload("res://scripts/monster_merge.gd")
+const MONSTER_DATA := preload("res://scripts/data/monster_data.gd")
+const MONSTERS_DIR := "res://assets/data/monsters/"
+const MOVES_DIR := "res://assets/data/moves/"
 
 # The player's chosen starter fights alone against a scaling wild roster early on, so it
 # gets a one-time boost over its base stats (recruits later stay at their base stats).
@@ -78,3 +81,72 @@ func prune_dead() -> void:
 	party = party.filter(func(c): return c.is_alive())
 	if party.size() != before:
 		party_changed.emit()
+
+
+# --- Save/resume serialization (Phase 19 scaffold; see scripts/data/save_game.gd) ---
+
+## Serialize the party to plain Dictionaries for a SaveGame. Stores each Combatant's FULL live state
+## (not just a monster id), so a run-time MERGED monster — whose MonsterData is generated in memory
+## with no file on disk — round-trips intact (name / stats / tint / moves). `source_id` is the
+## on-disk MonsterData id when there is one (for portrait/map-sprite lookup), else "".
+func serialize_party() -> Array:
+	var out: Array = []
+	for c in party:
+		var move_ids: Array = []
+		for mv in c.moves:
+			move_ids.append(String(mv.id))
+		out.append({
+			"source_id": String(c.source.id) if c.source != null else "",
+			"display_name": c.display_name,
+			"max_hp": c.max_hp,
+			"hp": c.hp,
+			"attack": c.attack,
+			"defense": c.defense,
+			"speed": c.speed,
+			"is_boss": c.is_boss,
+			"atk_bonus": c.atk_bonus,
+			"tint": c.source.tint if c.source != null else Color(0.6, 0.6, 0.6),
+			"move_ids": move_ids,
+		})
+	return out
+
+
+## Rebuild the party from serialize_party() output, replacing the current party.
+func restore_party(data: Array) -> void:
+	party.clear()
+	for e in data:
+		party.append(_combatant_from_save(e))
+	party_changed.emit()
+
+
+## Reconstruct one Combatant from a saved dict. Loads the on-disk MonsterData when `source_id`
+## resolves (for identity/art), otherwise builds a synthetic one from the saved name/tint — the
+## fused-monster case. Live stats and moves always come from the save, not the base data.
+func _combatant_from_save(e: Dictionary) -> Combatant:
+	var source_id := String(e.get("source_id", ""))
+	var md: MonsterData = null
+	var path := MONSTERS_DIR + source_id + ".tres"
+	if source_id != "" and ResourceLoader.exists(path):
+		md = load(path) as MonsterData
+	else:
+		md = MONSTER_DATA.new()
+		md.id = source_id
+		md.display_name = String(e.get("display_name", "Monster"))
+		md.tint = e.get("tint", Color(0.6, 0.6, 0.6))
+	var c := Combatant.new()
+	c.source = md
+	c.display_name = String(e.get("display_name", md.display_name))
+	c.max_hp = int(e.get("max_hp", 1))
+	c.hp = int(e.get("hp", c.max_hp))
+	c.attack = int(e.get("attack", 0))
+	c.defense = int(e.get("defense", 0))
+	c.speed = int(e.get("speed", 0))
+	c.is_boss = bool(e.get("is_boss", false))
+	c.atk_bonus = int(e.get("atk_bonus", 0))
+	var moves: Array = []
+	for mid in e.get("move_ids", []):
+		var mpath := MOVES_DIR + String(mid) + ".tres"
+		if ResourceLoader.exists(mpath):
+			moves.append(load(mpath))
+	c.moves = moves
+	return c

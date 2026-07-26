@@ -37,7 +37,7 @@ func test_boss_node_enemy_is_the_hydra() -> void:
 
 
 ## _build_run_record() only — never call _win()/_game_over() from a test, since both write to
-## the REAL user://run_history.json via RunHistory.record() (scripts/data/run_history.gd).
+## the REAL user://run_history.json via SaveManager.record_run() (scripts/data/save_manager.gd).
 func test_build_run_record_shape() -> void:
 	var run := _new_run()
 	var rs = load("res://autoload/run_state.gd").new()

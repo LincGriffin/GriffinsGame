@@ -9,6 +9,7 @@ extends Node
 
 const SFX_LIBRARY := preload("res://scripts/data/sfx_library.gd")
 const MUSIC_LIBRARY := preload("res://scripts/data/music_library.gd")
+const GAME_CONFIG := preload("res://scripts/data/game_config.gd")
 
 const SFX_BUS := "SFX"
 const MUSIC_BUS := "Music"
@@ -34,6 +35,17 @@ func _ready() -> void:
 	_music_player.bus = MUSIC_BUS
 	_music_player.finished.connect(_on_music_finished)
 	add_child(_music_player)
+
+	_apply_saved_volumes()
+
+
+## Restore each bus's saved volume from GameConfig (user://config.cfg). Defaults to full (1.0)
+## when nothing is saved, so a fresh install sounds exactly as before this existed.
+func _apply_saved_volumes() -> void:
+	for bus in [SFX_BUS, MUSIC_BUS]:
+		var idx := AudioServer.get_bus_index(bus)
+		if idx != -1:
+			AudioServer.set_bus_volume_db(idx, linear_to_db(GAME_CONFIG.bus_volume(bus)))
 
 
 ## Create `bus_name` routed to Master if it doesn't already exist. Idempotent — safe to call

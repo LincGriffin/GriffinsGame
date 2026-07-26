@@ -16,7 +16,7 @@ const SETTINGS_MENU := preload("res://scripts/settings_menu.gd")
 const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
 const ROSTER_HUD := preload("res://scripts/roster_hud.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
-const RUN_HISTORY := preload("res://scripts/data/run_history.gd")
+const SAVE_MANAGER := preload("res://scripts/data/save_manager.gd")
 const SCREEN_TRANSITION := preload("res://scripts/screen_transition.gd")
 
 # The wild pool spans difficulty tiers 0..3; the run draws depth-appropriate monsters
@@ -574,7 +574,7 @@ func _pick_unused(pool: Array, used: Dictionary):
 
 func _win() -> void:
 	_sfx("win")
-	RUN_HISTORY.record(_build_run_record("won"))
+	SAVE_MANAGER.record_run(_build_run_record("won"))
 	if _view != null:
 		_view.set_walking(false)
 	_show_banner("YOU WIN!\nThe Hydra is vanquished.", Color(0.9, 0.75, 0.25))
@@ -582,7 +582,7 @@ func _win() -> void:
 
 func _game_over() -> void:
 	_sfx("lose")
-	RUN_HISTORY.record(_build_run_record("lost"))
+	SAVE_MANAGER.record_run(_build_run_record("lost"))
 	if _view != null:
 		_view.set_walking(false)
 	_show_banner("GAME OVER\nPress R for a new run.", Color(0.85, 0.28, 0.28))

@@ -129,6 +129,58 @@ func test_prune_dead_removes_fallen() -> void:
 	rs.free()
 
 
+func test_serialize_restore_preserves_live_party() -> void:
+	# Save/resume scaffold: the party round-trips its FULL live state, not just monster ids.
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	rs.add_monster(load("res://assets/data/monsters/bat.tres"))
+	rs.party[0].attack += 5       # simulate a power-up diverging from base stats
+	rs.party[0].hp = 3            # mid-run HP
+	var names: Array = []
+	var stats: Array = []
+	for c in rs.party:
+		names.append(c.display_name)
+		stats.append([c.max_hp, c.hp, c.attack, c.defense])
+	var data: Array = rs.serialize_party()
+	rs.free()
+
+	var rs2 := _new_run_state()
+	rs2.restore_party(data)
+	eq(rs2.party.size(), 2, "restored party has the same number of monsters")
+	for i in rs2.party.size():
+		var c = rs2.party[i]
+		eq(c.display_name, names[i], "monster %d name preserved" % i)
+		eq([c.max_hp, c.hp, c.attack, c.defense], stats[i], "monster %d live stats preserved" % i)
+		check(c.source != null, "restored monster has a source (for portrait/art lookup)")
+		check(c.moves.size() > 0, "restored monster keeps its moves")
+	rs2.free()
+
+
+func test_serialize_restore_rebuilds_a_fused_monster() -> void:
+	# The hard case: a merged monster's MonsterData is generated at run time with NO file on disk,
+	# so restore must rebuild it from the saved fields rather than loading an id.
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	rs.add_monster(load("res://assets/data/monsters/bat.tres"))
+	var fused = rs.merge(rs.party[0], rs.party[1])
+	eq(rs.party.size(), 1, "merge left a single fused monster")
+	var fused_name: String = fused.display_name
+	var fused_stats: Array = [fused.max_hp, fused.attack, fused.defense]
+	var fused_moves: int = fused.moves.size()
+	var data: Array = rs.serialize_party()
+	rs.free()
+
+	var rs2 := _new_run_state()
+	rs2.restore_party(data)
+	eq(rs2.party.size(), 1, "the fused monster round-trips")
+	var c = rs2.party[0]
+	eq(c.display_name, fused_name, "fused monster's name preserved (no on-disk source needed)")
+	eq([c.max_hp, c.attack, c.defense], fused_stats, "fused monster's stats preserved")
+	eq(c.moves.size(), fused_moves, "fused monster's merged moveset preserved")
+	check(c.source != null, "restored fused monster still has a (synthetic) source for tint fallback")
+	rs2.free()
+
+
 func test_party_wipe_detected() -> void:
 	var rs := _new_run_state()
 	rs.new_run(_slime())
