@@ -32,6 +32,7 @@ const ROSTER := [
 	# --- tier 2: mid wild ---
 	{"id": "goblin",   "name": "Goblin",        "hp": 35, "atk": 10, "def": 4, "spd": 6,  "tier": 2, "boss": false, "elite": false, "starter": false, "tint": Color(0.45, 0.70, 0.35), "moves": ["strike", "heavy", "focus"]},
 	{"id": "spider",   "name": "Giant Spider",  "hp": 33, "atk": 9,  "def": 3, "spd": 9,  "tier": 2, "boss": false, "elite": false, "starter": false, "tint": Color(0.30, 0.30, 0.42), "moves": ["strike", "drain", "focus", "shock"]},
+	{"id": "cyclops",  "name": "Cyclops",       "hp": 40, "atk": 11, "def": 5, "spd": 3,  "tier": 2, "boss": false, "elite": false, "starter": false, "tint": Color(0.55, 0.45, 0.62), "moves": ["strike", "heavy", "guard"]},
 	# --- tier 3: late wild ---
 	{"id": "golem",    "name": "Stone Golem",   "hp": 58, "atk": 12, "def": 8, "spd": 2,  "tier": 3, "boss": false, "elite": false, "starter": false, "tint": Color(0.55, 0.55, 0.60), "moves": ["slam", "guard", "reckless_swing"]},
 	{"id": "wraith",   "name": "King Cat",      "hp": 40, "atk": 13, "def": 5, "spd": 8,  "tier": 3, "boss": false, "elite": false, "starter": false, "tint": Color(0.50, 0.50, 0.72), "moves": ["strike", "drain", "focus", "evade"]},

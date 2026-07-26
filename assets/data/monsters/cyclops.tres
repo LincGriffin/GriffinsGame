@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_x4eig"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_0rumj"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_aquvq"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="4_txku3"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_yjlxn"]
+
+[resource]
+script = ExtResource("5_yjlxn")
+id = "cyclops"
+display_name = "Cyclops"
+max_hp = 40
+attack = 11
+defense = 5
+speed = 3
+tier = 2
+tint = Color(0.55, 0.45, 0.62, 1)
+moves = Array[ExtResource("1_x4eig")]([ExtResource("2_0rumj"), ExtResource("3_aquvq"), ExtResource("4_txku3")])

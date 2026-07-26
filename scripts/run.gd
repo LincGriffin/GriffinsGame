@@ -33,6 +33,7 @@ const WILD_ENEMIES: Array[MonsterData] = [
 	preload("res://assets/data/monsters/imp.tres"),
 	preload("res://assets/data/monsters/goblin.tres"),
 	preload("res://assets/data/monsters/spider.tres"),
+	preload("res://assets/data/monsters/cyclops.tres"),
 	preload("res://assets/data/monsters/golem.tres"),
 	preload("res://assets/data/monsters/wraith.tres"),
 ]

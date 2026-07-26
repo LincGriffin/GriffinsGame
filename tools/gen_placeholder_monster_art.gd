@@ -22,6 +22,7 @@ const MONSTERS := {
 	"myconid": {"tint": Color(0.42, 0.62, 0.50), "shape": "myconid"},
 	"wisp":    {"tint": Color(0.60, 0.85, 0.90), "shape": "wisp"},
 	"imp":     {"tint": Color(0.85, 0.35, 0.30), "shape": "imp"},
+	"cyclops": {"tint": Color(0.55, 0.45, 0.62), "shape": "cyclops"},
 }
 
 
@@ -52,6 +53,7 @@ func _make_portrait(tint: Color, shape: String) -> Image:
 		"wisp":    _draw_wisp(img, tint)
 		"imp":     _draw_imp(img, tint)
 		"kobold":  _draw_kobold(img, tint)
+		"cyclops": _draw_cyclops(img, tint)
 	return img
 
 
@@ -158,6 +160,30 @@ func _draw_imp(img: Image, tint: Color) -> void:
 	_tri(img, Vector2(108, 160), Vector2(148, 160), Vector2(128, 178), lo)
 	_tri(img, Vector2(114, 160), Vector2(120, 160), Vector2(117, 172), Color.WHITE)
 	_tri(img, Vector2(136, 160), Vector2(142, 160), Vector2(139, 172), Color.WHITE)
+
+
+func _draw_cyclops(img: Image, tint: Color) -> void:
+	var base := tint
+	var hi := tint.lerp(Color.WHITE, 0.26)
+	var lo := tint.lerp(Color.BLACK, 0.42)
+	# hulking head/shoulders
+	_ellipse(img, 128, 176, 78, 44, lo)          # shoulders
+	_ellipse(img, 124, 172, 70, 38, base)
+	_ellipse(img, 128, 120, 66, 62, lo)          # head
+	_ellipse(img, 128, 120, 60, 56, base)
+	_ellipse(img, 114, 106, 34, 26, hi)          # forehead highlight
+	# two little tusks at the jaw
+	_tri(img, Vector2(104, 158), Vector2(112, 158), Vector2(108, 176), Color(0.95, 0.93, 0.82))
+	_tri(img, Vector2(144, 158), Vector2(152, 158), Vector2(148, 176), Color(0.95, 0.93, 0.82))
+	# one big central eye
+	_disc(img, 128, 116, 30, Color(0.95, 0.95, 0.93))   # sclera
+	_disc(img, 128, 118, 17, Color(0.85, 0.62, 0.20))   # amber iris
+	_disc(img, 128, 118, 8, Color(0.10, 0.06, 0.02))    # pupil
+	_disc(img, 122, 112, 4, Color.WHITE)                # glint
+	# heavy brow ridge
+	_tri(img, Vector2(92, 92), Vector2(164, 92), Vector2(128, 104), lo)
+	# grim frown
+	_tri(img, Vector2(112, 150), Vector2(144, 150), Vector2(128, 142), lo)
 
 
 func _draw_kobold(img: Image, tint: Color) -> void:
