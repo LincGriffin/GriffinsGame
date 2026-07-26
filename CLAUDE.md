@@ -142,8 +142,9 @@ one doc written for someone playing rather than building the game.
   elite **and** full-heal the party. The **Hydra** is the final boss.
 - **Difficulty tuning:** all monster HP in `gen_content.gd`'s `ROSTER` runs **+25%** over the
   original balance pass so an average fight lasts longer. The player's **chosen starter** also gets
-  a one-time boost over its base stats (`RunState.STARTER_HP_MULT` / `STARTER_ATK_BONUS`, applied in
-  `new_run()`) since it fights alone early in the run; monsters recruited later stay at base stats.
+  a one-time boost over its base stats (`RunState.STARTER_HP_MULT` ×1.4 / `STARTER_ATK_BONUS` +3 /
+  `STARTER_DEF_BONUS` +1, applied in `new_run()`) since it fights alone early in the run; monsters
+  recruited later stay at base stats.
 - **Monster portraits are optional art**, looked up by convention — `assets/portraits/<monster id>.png`
   (256×256) via `scripts/data/portraits.gd` (`Portraits.for_monster()`, memoised). Shown on the
   **starter-select cards**, as the **battle enemy art** (the monster's `tint` block becomes an 8px
@@ -241,9 +242,12 @@ one doc written for someone playing rather than building the game.
   Each picker filters its depth-appropriate pool to unused monsters, **widens** to the whole wild
   pool if that tier is spent, and only **repeats as a last resort** once the roster is genuinely
   exhausted (never leaves a node without an enemy). **Roster headroom matters:** a generated map has
-  roughly **10–13 battle nodes** but `WILD_ENEMIES` currently holds **9**, so the tail repeats today
-  — adding more low-tier monsters raises the ceiling and is the intended fix (keeps map size the
-  same). `test_unique_encounters.gd` pins both the uniqueness and the exhaustion fallback.
+  roughly **10–13 battle nodes** and `WILD_ENEMIES` now holds **13** (four tier-1 monsters — Kobold
+  Scrapper / Myconid / Marsh Wisp / Ember Imp — added to close most of the repeat tail); adding more
+  low-tier monsters raises the ceiling further (keeps map size the same). Note the widen-on-exhaustion
+  step reaches the **whole** pool, so an exhausted early tier can still surface a tier-3 monster at a
+  low row — the deeper fix is to widen to *adjacent* tiers only. `test_unique_encounters.gd` pins both
+  the uniqueness and the exhaustion fallback.
 - **Optional per-monster map sprite:** `assets/map_sprites/<id>.png`, looked up by
   `scripts/data/map_sprites.gd` (`MapSprites`, same optional-art/memoised-cache contract as
   `Portraits` above). `dungeon_view.gd` draws it over a battle/elite/boss room's marker tile when

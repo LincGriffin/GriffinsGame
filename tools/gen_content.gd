@@ -19,18 +19,22 @@ const MOVES_DIR := "res://assets/data/moves/"
 # HP is +25% over the original balance pass (round-half-up) so an average fight runs longer.
 const ROSTER := [
 	# --- tier 0: starters (the fixed weakest trio, also the earliest wild pool) ---
-	{"id": "chicken",  "name": "Cluckling",    "hp": 13, "atk": 4,  "def": 1, "spd": 6,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.95, 0.85, 0.35), "moves": ["strike", "focus"]},
+	{"id": "chicken",  "name": "Cluckling",    "hp": 13, "atk": 4,  "def": 1, "spd": 6,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.95, 0.85, 0.35), "moves": ["strike", "focus", "heavy"]},
 	{"id": "slime",    "name": "Green Slime",   "hp": 20, "atk": 5,  "def": 2, "spd": 3,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.35, 0.78, 0.35), "moves": ["strike", "guard"]},
 	{"id": "bat",      "name": "Cave Bat",      "hp": 15, "atk": 6,  "def": 1, "spd": 8,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.59, 0.43, 0.78), "moves": ["strike", "drain", "evade"]},
 	# --- tier 1: early wild ---
 	{"id": "rat",      "name": "Sewer Rat",     "hp": 20, "atk": 7,  "def": 2, "spd": 7,  "tier": 1, "boss": false, "elite": false, "starter": false, "tint": Color(0.55, 0.45, 0.40), "moves": ["strike", "drain"]},
 	{"id": "skeleton", "name": "Skeleton",      "hp": 28, "atk": 8,  "def": 4, "spd": 4,  "tier": 1, "boss": false, "elite": false, "starter": false, "tint": Color(0.86, 0.86, 0.82), "moves": ["strike", "heavy", "guard", "reflect"]},
+	{"id": "kobold",   "name": "Kobold Scrapper", "hp": 22, "atk": 7, "def": 2, "spd": 6, "tier": 1, "boss": false, "elite": false, "starter": false, "tint": Color(0.78, 0.50, 0.28), "moves": ["strike", "heavy", "focus"]},
+	{"id": "myconid",  "name": "Myconid",       "hp": 27, "atk": 6,  "def": 3, "spd": 3,  "tier": 1, "boss": false, "elite": false, "starter": false, "tint": Color(0.42, 0.62, 0.50), "moves": ["strike", "drain", "guard"]},
+	{"id": "wisp",     "name": "Marsh Wisp",    "hp": 18, "atk": 8,  "def": 1, "spd": 9,  "tier": 1, "boss": false, "elite": false, "starter": false, "tint": Color(0.60, 0.85, 0.90), "moves": ["strike", "drain", "evade"]},
+	{"id": "imp",      "name": "Ember Imp",     "hp": 24, "atk": 8,  "def": 2, "spd": 7,  "tier": 1, "boss": false, "elite": false, "starter": false, "tint": Color(0.85, 0.35, 0.30), "moves": ["strike", "shock", "focus"]},
 	# --- tier 2: mid wild ---
 	{"id": "goblin",   "name": "Goblin",        "hp": 35, "atk": 10, "def": 4, "spd": 6,  "tier": 2, "boss": false, "elite": false, "starter": false, "tint": Color(0.45, 0.70, 0.35), "moves": ["strike", "heavy", "focus"]},
 	{"id": "spider",   "name": "Giant Spider",  "hp": 33, "atk": 9,  "def": 3, "spd": 9,  "tier": 2, "boss": false, "elite": false, "starter": false, "tint": Color(0.30, 0.30, 0.42), "moves": ["strike", "drain", "focus", "shock"]},
 	# --- tier 3: late wild ---
 	{"id": "golem",    "name": "Stone Golem",   "hp": 58, "atk": 12, "def": 8, "spd": 2,  "tier": 3, "boss": false, "elite": false, "starter": false, "tint": Color(0.55, 0.55, 0.60), "moves": ["slam", "guard", "reckless_swing"]},
-	{"id": "wraith",   "name": "Wraith",        "hp": 40, "atk": 13, "def": 5, "spd": 8,  "tier": 3, "boss": false, "elite": false, "starter": false, "tint": Color(0.50, 0.50, 0.72), "moves": ["strike", "drain", "focus", "evade"]},
+	{"id": "wraith",   "name": "King Cat",      "hp": 40, "atk": 13, "def": 5, "spd": 8,  "tier": 3, "boss": false, "elite": false, "starter": false, "tint": Color(0.50, 0.50, 0.72), "moves": ["strike", "drain", "focus", "evade"]},
 	# --- elites: tougher, better reward (recruit + full heal) ---
 	{"id": "gremlin_knob", "name": "Gremlin Knob", "hp": 53, "atk": 14, "def": 6, "spd": 10, "tier": 3, "boss": false, "elite": true,  "starter": false, "tint": Color(0.80, 0.40, 0.50), "moves": ["strike", "heavy", "drain", "focus", "shock"]},
 	{"id": "griffin",  "name": "The Griffin",   "hp": 70, "atk": 15, "def": 7, "spd": 9,  "tier": 3, "boss": false, "elite": true,  "starter": false, "tint": Color(0.88, 0.71, 0.27), "moves": ["strike", "heavy", "slam", "guard", "reckless_swing"]},

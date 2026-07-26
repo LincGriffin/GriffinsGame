@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_y7mw3"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_mtfna"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_dcckh"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="4_mp6bq"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_8pnm8"]
+
+[resource]
+script = ExtResource("5_8pnm8")
+id = "myconid"
+display_name = "Myconid"
+max_hp = 27
+attack = 6
+defense = 3
+speed = 3
+tier = 1
+tint = Color(0.42, 0.62, 0.5, 1)
+moves = Array[ExtResource("1_y7mw3")]([ExtResource("2_mtfna"), ExtResource("3_dcckh"), ExtResource("4_mp6bq")])

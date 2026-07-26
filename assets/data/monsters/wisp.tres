@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_axi55"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_dlrdf"]
+[ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_5i8s5"]
+[ext_resource type="Resource" path="res://assets/data/moves/evade.tres" id="4_o6rra"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_v6fh4"]
+
+[resource]
+script = ExtResource("5_v6fh4")
+id = "wisp"
+display_name = "Marsh Wisp"
+max_hp = 18
+attack = 8
+defense = 1
+speed = 9
+tier = 1
+tint = Color(0.6, 0.85, 0.9, 1)
+moves = Array[ExtResource("1_axi55")]([ExtResource("2_dlrdf"), ExtResource("3_5i8s5"), ExtResource("4_o6rra")])

@@ -10,7 +10,7 @@
 [resource]
 script = ExtResource("6_b67al")
 id = "wraith"
-display_name = "Wraith"
+display_name = "King Cat"
 max_hp = 40
 attack = 13
 defense = 5

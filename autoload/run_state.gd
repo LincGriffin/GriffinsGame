@@ -15,8 +15,9 @@ const MONSTER_MERGE := preload("res://scripts/monster_merge.gd")
 
 # The player's chosen starter fights alone against a scaling wild roster early on, so it
 # gets a one-time boost over its base stats (recruits later stay at their base stats).
-const STARTER_HP_MULT := 1.3
-const STARTER_ATK_BONUS := 2
+const STARTER_HP_MULT := 1.4
+const STARTER_ATK_BONUS := 3
+const STARTER_DEF_BONUS := 1
 
 ## Array[Combatant] — the run's living monsters, each carrying its current hp.
 var party: Array = []
@@ -31,6 +32,7 @@ func new_run(starter: MonsterData) -> void:
 		c.max_hp = int(round(c.max_hp * STARTER_HP_MULT))
 		c.hp = c.max_hp
 		c.attack += STARTER_ATK_BONUS
+		c.defense += STARTER_DEF_BONUS
 		party.append(c)
 	party_changed.emit()
 

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_47hu5"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_wdlea"]
+[ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_at0t5"]
+[ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_us7nn"]
+[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_76lh8"]
+
+[resource]
+script = ExtResource("5_76lh8")
+id = "kobold"
+display_name = "Kobold Scrapper"
+max_hp = 22
+attack = 7
+speed = 6
+tier = 1
+tint = Color(0.78, 0.5, 0.28, 1)
+moves = Array[ExtResource("1_47hu5")]([ExtResource("2_wdlea"), ExtResource("3_at0t5"), ExtResource("4_us7nn")])
