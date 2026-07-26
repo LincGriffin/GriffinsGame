@@ -7,4 +7,5 @@ script = ExtResource("1_4oeld")
 id = "guard"
 display_name = "Guard"
 kind = "guard"
-description = "Brace — halve the next hit."
+description = "Brace — halve the next hit, and maybe stagger the foe."
+cooldown = 1

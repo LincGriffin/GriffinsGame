@@ -14,6 +14,21 @@ func test_move_roster_present() -> void:
 		eq(mv.kind, expected[id], "%s has kind %s" % [id, expected[id]])
 
 
+func test_only_the_basic_strike_is_cooldown_free() -> void:
+	eq(load("res://assets/data/moves/strike.tres").cooldown, 0, "the basic Strike has no cooldown")
+	for id in ["heavy", "slam", "guard", "evade", "reflect", "mend", "drain", "focus", "shock",
+			"reckless_swing"]:
+		check(load("res://assets/data/moves/%s.tres" % id).cooldown >= 1,
+			"%s (a non-basic move) has a cooldown" % id)
+
+
+func test_moves_default_to_not_charging() -> void:
+	# Charge is an opt-in per-move capability; nothing in the shipped roster charges by default.
+	for id in ["strike", "heavy", "slam", "guard", "mend", "shock"]:
+		check(not load("res://assets/data/moves/%s.tres" % id).charge,
+			"%s does not charge by default" % id)
+
+
 func test_moves_carry_optional_effect_ids() -> void:
 	# Every move exposes sfx/vfx (default blank), and the example-assigned effects are present.
 	var mend = load("res://assets/data/moves/mend.tres")

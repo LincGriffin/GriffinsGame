@@ -139,14 +139,15 @@ func test_evade_negates_the_next_hit() -> void:
 		"the evading monster takes 0 damage from the enemy's follow-up attack")
 
 
-func test_reflect_is_thorns_both_sides_take_the_damage() -> void:
+func test_reflect_takes_half_and_slams_the_full_amount_back() -> void:
 	await h.start([_specialist("mirror_mon", "reflect", "bounce", 0)], _brute("ogre"))
 	await h.use_move("bounce")
-	check(not h.is_finished, "reflecting doesn't end the battle — both are 100-hp")
-	check(h.run_state.party[0].hp < h.run_state.party[0].max_hp,
-		"the reflecting monster STILL takes the damage (reflect no longer prevents it)")
-	check(h.battle._enemy.hp < h.battle._enemy.max_hp,
-		"the enemy also takes the same damage reflected back (thorns)")
+	var player_loss: int = h.run_state.party[0].max_hp - h.run_state.party[0].hp
+	var enemy_loss: int = h.battle._enemy.max_hp - h.battle._enemy.hp
+	check(not h.is_finished, "reflecting doesn't end the battle — both are healthy")
+	check(player_loss > 0, "the reflector still absorbs SOME of the hit (half)")
+	check(enemy_loss > player_loss, "the attacker takes the FULL amount back — more than the reflector absorbs")
+	eq(player_loss, int(floor(enemy_loss / 2.0)), "the reflector takes exactly half of what it sends back")
 
 
 func test_stun_lands_and_skips_the_enemy_turn() -> void:
@@ -169,10 +170,53 @@ func test_stun_can_miss() -> void:
 
 func test_guard_grants_a_counter_bonus_consumed_by_the_next_attack() -> void:
 	await h.start([_specialist("bracer", "guard", "brace", 0)], _brute("ogre"))
+	h.battle.GUARD_STUN_CHANCE = 0.0   # isolate the counter-bonus behavior from the stagger
 	await h.use_move("brace")   # guard → sets a one-shot counter bonus
 	eq(h.battle._active.counter_bonus, h.battle.COUNTER_ATK, "guard sets a one-shot counter bonus")
 	await h.use_move("hit")     # the specialist's basic attack consumes it
 	eq(h.battle._active.counter_bonus, 0, "the counter bonus is consumed by the next attack")
+
+
+func test_guard_can_stagger_the_enemy() -> void:
+	await h.start([_specialist("bracer", "guard", "brace", 0)], _brute("ogre"))
+	h.battle.GUARD_STUN_CHANCE = 1.0   # force the 50% stagger to land
+	await h.use_move("brace")
+	eq(h.run_state.party[0].hp, h.run_state.party[0].max_hp,
+		"a landed guard-stagger stuns the enemy, so it skips its turn and the guarder takes no hit")
+
+
+func test_guard_without_the_stagger_still_just_defends() -> void:
+	await h.start([_specialist("bracer2", "guard", "brace", 0)], _brute("ogre"))
+	h.battle.GUARD_STUN_CHANCE = 0.0   # force the stagger to fail
+	await h.use_move("brace")
+	check(h.run_state.party[0].hp < h.run_state.party[0].max_hp,
+		"without the stagger the enemy still attacks (guard only halves the incoming hit)")
+
+
+func test_cooldown_greys_out_a_non_basic_move_the_turn_after_use() -> void:
+	var m := _specialist("cooler", "attack", "bighit", 8)
+	m.moves[1].cooldown = 1
+	await h.start([m], _tank("wall"))   # 100 hp / 20 def — nothing dies during the test
+	await h.use_move("bighit")
+	check(h.battle._active.on_cooldown("bighit"), "the move is on cooldown the turn after use")
+	var disabled := false
+	for b in h.battle._actions.get_children():
+		if b is Button and b.text.begins_with("Bighit") and b.disabled:
+			disabled = true
+	check(disabled, "its command button is greyed out (disabled) while cooling down")
+	# Strike-equivalent basic ("hit") is never on cooldown, so an action is always available.
+	check(not h.battle._active.on_cooldown("hit"), "the basic attack stays available")
+
+
+func test_charge_move_fires_the_turn_after_it_is_selected() -> void:
+	var m := _specialist("charger", "attack", "bigcharge", 30)
+	m.moves[1].charge = true
+	await h.start([m], _tank("wall"))   # 100 hp / 20 def survives the charged hit
+	await h.use_move("bigcharge")       # drives the charge turn AND the auto-release turn
+	check(h.battle._enemy.hp < h.battle._enemy.max_hp,
+		"the charged move fires on the following turn and damages the enemy")
+	check(h.run_state.party[0].hp < h.run_state.party[0].max_hp,
+		"the caster is exposed while charging — the enemy gets a free hit in")
 
 
 func test_reckless_damages_both_sides() -> void:

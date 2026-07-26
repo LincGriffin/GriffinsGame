@@ -9,4 +9,5 @@ display_name = "Drain"
 kind = "drain"
 power = 1
 description = "Bite and siphon — heal for half the damage."
+cooldown = 1
 vfx = "drain_wisp"

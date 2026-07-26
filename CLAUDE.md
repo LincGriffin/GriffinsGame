@@ -78,18 +78,33 @@ one doc written for someone playing rather than building the game.
   The command menu lists the active monster's **moves**, a **Switch** command (shown whenever another
   living monster is available), and Flee — **currently hidden** behind `Battle.FLEE_ENABLED := false`
   (flip it back on to restore it; `_on_flee`/`FLEE_CHANCE`/its sfx hook are all still intact). Move
-  **kinds** (data-driven, effect not element): `attack`, `guard` (halve the next hit), `evade` (the
-  next hit deals 0 damage), `reflect` (**thorns**: you STILL take the hit AND deal the same damage
-  back to the attacker), `heal`, `drain` (attack that heals the user **3/8** of the damage dealt —
-  half, reduced 25%), `buff` (raise the user's `atk_bonus` for the battle; reset on switch-in),
-  `stun` (an attack with a **`STUN_CHANCE` (50%)** chance to also skip the target's next turn), and
-  `reckless` (a heavy attack that also damages its own user — `floor(dmg/4)`, min 1). **`guard` and
-  `evade` also grant a one-shot `counter_bonus` (`COUNTER_ATK`)** — added to the caster's *next*
-  attack, then cleared (turtle-then-strike), on top of their mitigation. `guard` / `evade` /
-  `reflect` are one-shot stances: set on cast, consumed by the very next incoming hit (or expire —
-  cleared alongside `defending` whenever the command menu comes back up), and evaded/reflected hits
-  skip every secondary effect (no drain-heal, no stun, no recoil) — only the 0-damage (evade) or
-  mutual-damage (reflect) itself happens. `stunned` is different: inflicted BY an opponent's `stun` move,
+  **kinds** (data-driven, effect not element): `attack`, `guard` (halve the next hit **and a
+  `GUARD_STUN_CHANCE` (50%) chance to stun the foe** for its next turn), `evade` (the next hit deals 0
+  damage), `reflect` (take **HALF** the next hit yourself and slam the **FULL** amount back at the
+  attacker — `_resolve_hit` returns `self_dmg`=half to the reflector, `dmg`=full to the attacker),
+  `heal`, `drain` (attack that heals the user **3/8** of the damage dealt — half, reduced 25%),
+  `buff` (raise the user's `atk_bonus` for the battle; reset on switch-in), `stun` (an attack with a
+  **`STUN_CHANCE` (50%)** chance to also skip the target's next turn), and `reckless` (a heavy attack
+  that also damages its own user — `floor(dmg/4)`, min 1). **`guard` and `evade` also grant a one-shot
+  `counter_bonus` (`COUNTER_ATK`)** — added to the caster's *next* attack, then cleared
+  (turtle-then-strike), on top of their mitigation. `guard` / `evade` / `reflect` are one-shot
+  stances: set on cast, consumed by the very next incoming hit (or expire — cleared alongside
+  `defending` whenever the command menu comes back up), and evaded/reflected hits skip every secondary
+  effect (no drain-heal, no stun, no recoil) — only the 0-damage (evade) or half-to-self/full-back
+  (reflect) itself happens.
+- **Move cooldown & charge (data-driven per move, editable in gen_moves.gd or the Moves dock).**
+  `MoveData.cooldown` (turns unavailable after use) — the basic **Strike is 0**; every other move is
+  **1** (usable every other turn). Enforced **per-combatant on both sides**: `Combatant.cooldowns`
+  (id→turns) ticked at the start of each side's turn (`tick_cooldowns`), started on use
+  (`start_cooldown`, sets `turns+1` so it survives that tick). The player's command menu **greys out**
+  a cooled move (`_build_command_buttons`; if *every* move is cooling down it enables them all so the
+  monster is never actionless); `_enemy_pick_move` **skips** cooled moves (falling back to a
+  cooldown-free power-0 basic hit). `MoveData.charge` (bool) — the move spends one turn **charging**
+  (the opponent still acts), then **auto-fires** on the caster's next turn (`Combatant.charging`,
+  released at the top of `_begin_player_command` / `_enemy_turn`). Both reset on switch-in
+  (`reset_turn_state`). Cooldowns are read by the RunHarness strategies too (they only pick available
+  moves), so `balance_sim` reflects them — the cooldown alone dropped the dominant "burst" strategy
+  from ~50% to ~10% win rate. `stunned` is different: inflicted BY an opponent's `stun` move,
   checked and cleared at the start of the stunned side's own next turn (`_begin_player_command`/
   `_enemy_turn`), skipping it entirely — this can land mid-round (if the stunning side is faster)
   or next round (if slower), whichever the natural turn order produces. Enemies pick a random

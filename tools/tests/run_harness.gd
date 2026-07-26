@@ -223,7 +223,11 @@ func _roster_summary() -> String:
 ##  random     — uniformly random from the FULL moveset (guard/heal/buff/evade/reflect/... included).
 func _pick_move(h) -> String:
 	var active = h.battle._active
-	var moves: Array = active.moves
+	# Only pick from moves that aren't on cooldown (the command menu would grey them out); fall
+	# back to the full moveset if somehow everything is cooling down (matches battle's safety).
+	var moves: Array = active.moves.filter(func(mv): return not active.on_cooldown(mv.id))
+	if moves.is_empty():
+		moves = active.moves
 	if moves.is_empty():
 		return ""
 	match _strategy:

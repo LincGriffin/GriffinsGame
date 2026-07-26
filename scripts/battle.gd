@@ -31,6 +31,9 @@ const FLEE_ENABLED := false   # hidden for now — flip back on to restore the F
 ## A "stun" move only lands STUN_CHANCE of the time (balance). A var (not const) so a test harness
 ## can force it to 1.0/0.0 for a deterministic outcome — _rng is randomize()d in _ready().
 var STUN_CHANCE := 0.5
+## Guard also has this chance to STUN the opponent for their next turn (on top of its mitigation +
+## counter bonus). A var so a test harness can force it to 1.0/0.0.
+var GUARD_STUN_CHANCE := 0.5
 ## Guard/evade also grant this one-shot attack bonus, added to the caster's NEXT attack (turtle-
 ## then-strike) on top of their damage mitigation.
 const COUNTER_ATK := 3
@@ -144,10 +147,19 @@ func _choose_lead() -> void:
 
 
 func _begin_player_command() -> void:
+	_active.tick_cooldowns()
 	if _active.stunned:
 		_active.stunned = false
 		await _say("%s is stunned and can't move!" % _active.display_name)
 		await _end_player_turn()
+		return
+	# A move charged last turn now fires automatically, no menu.
+	if _active.charging != null:
+		var mv = _active.charging
+		_active.charging = null
+		_state = State.RESOLVING
+		await _say("%s unleashes %s!" % [_active.display_name, mv.display_name])
+		await _resolve_move(mv)
 		return
 	_state = State.PLAYER_COMMAND
 	_active.defending = false
@@ -173,8 +185,15 @@ func _end_player_turn() -> void:
 ## and Flee (hidden for now — see FLEE_ENABLED; never shown against the boss anyway).
 func _build_command_buttons() -> void:
 	_clear_dynamic_buttons()
+	# A move on cooldown is shown greyed with its remaining turns — UNLESS every move is cooling
+	# down, in which case they're all enabled so the monster is never left with no action.
+	var any_ready := _active.moves.any(func(m): return not _active.on_cooldown(m.id))
 	for mv in _active.moves:
-		_add_button(mv.display_name, _on_move.bind(mv))
+		var cd: int = int(_active.cooldowns.get(mv.id, 0))
+		if any_ready and cd > 0:
+			_add_button("%s (%d)" % [mv.display_name, cd], func(): pass, null, true)
+		else:
+			_add_button(mv.display_name, _on_move.bind(mv))
 	if _living_party().size() > 1:
 		_add_button("Switch", _on_switch)
 	if FLEE_ENABLED and not _enemy.is_boss:
@@ -186,6 +205,13 @@ func _on_move(mv) -> void:
 		return
 	_state = State.RESOLVING
 	_clear_dynamic_buttons()
+	# A charge move only charges this turn; it fires from _begin_player_command next turn.
+	if mv.charge and _active.charging == null:
+		_active.charging = mv
+		_play_vfx(_player_hp, mv.vfx)
+		await _say("%s begins charging %s!" % [_active.display_name, mv.display_name])
+		await _end_player_turn()
+		return
 	await _resolve_move(mv)
 
 
@@ -225,13 +251,22 @@ func _on_flee() -> void:
 
 
 func _resolve_move(mv) -> void:
+	# Put the move on cooldown as it resolves (a charge move cools down when it FIRES, not when the
+	# charge starts — this is the fire path either way).
+	_active.start_cooldown(mv.id, mv.cooldown)
 	match mv.kind:
 		"guard":
 			_sfx(_move_sfx(mv))
 			_play_vfx(_player_hp, mv.vfx)
 			_active.defending = true
 			_active.counter_bonus = COUNTER_ATK   # brace, then hit back harder next turn
-			await _say("%s guards — braced to strike back!" % _active.display_name)
+			# Guard also has a chance to stagger (stun) the foe for its next turn.
+			if _enemy.is_alive() and _rng.randf() < GUARD_STUN_CHANCE:
+				_enemy.stunned = true
+				await _say("%s guards — braced to strike back, and staggers %s!" %
+					[_active.display_name, _enemy.display_name])
+			else:
+				await _say("%s guards — braced to strike back!" % _active.display_name)
 			await _end_player_turn()
 		"evade":
 			_sfx(_move_sfx(mv))
@@ -282,18 +317,21 @@ func _resolve_move(mv) -> void:
 ## a THORNS effect: the target STILL takes the damage AND the attacker takes the same amount back
 ## (it no longer prevents the target's own damage). Both evaded and reflected hits skip every
 ## secondary effect (drain heal / stun / reckless recoil) — only the base damage is dealt.
+## For a REFLECT: the target takes HALF the hit and the attacker takes the FULL amount back — so
+## `dmg` is the full damage (dealt to the attacker) and `self_dmg` is the half the target absorbs.
 func _resolve_hit(attacker: Combatant, target: Combatant, move_power: int) -> Dictionary:
 	if target.evading:
 		target.evading = false
-		return {"dmg": 0, "evaded": true, "reflected": false}
+		return {"dmg": 0, "self_dmg": 0, "evaded": true, "reflected": false}
 	var dmg: int = Combatant.compute_damage(attacker, target, _rng, move_power)
 	if target.reflecting:
 		target.reflecting = false
-		target.take_damage(dmg)     # reflect no longer prevents the target's damage...
-		attacker.take_damage(dmg)   # ...and still reflects the same damage back at the attacker
-		return {"dmg": dmg, "evaded": false, "reflected": true}
+		var self_dmg: int = int(floor(dmg / 2.0))   # the reflector only takes HALF...
+		target.take_damage(self_dmg)
+		attacker.take_damage(dmg)                    # ...and slams the FULL amount back at the attacker
+		return {"dmg": dmg, "self_dmg": self_dmg, "evaded": false, "reflected": true}
 	target.take_damage(dmg)
-	return {"dmg": dmg, "evaded": false, "reflected": false}
+	return {"dmg": dmg, "self_dmg": 0, "evaded": false, "reflected": false}
 
 
 ## Applies a LANDED hit's secondary effects (drain heal / stun / reckless recoil) — never called
@@ -341,14 +379,15 @@ func _player_attack(mv) -> void:
 			[_active.display_name, mv.display_name, _enemy.display_name])
 		return
 	if result["reflected"]:
-		# Enemy had a reflect stance — thorns: both sides take the damage.
+		# Enemy had a reflect stance: it takes HALF, you (the attacker) take the FULL amount back.
+		var self_dmg: int = result["self_dmg"]
 		_hit_feedback(_enemy_sprite)
-		_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
+		_pop_number(_enemy_sprite, "-%d" % self_dmg, DMG_COLOR)
 		_hit_feedback(_player_hp)
 		_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
 		_update_hud()
-		await _say("%s's reflect — %s and %s each take %d!" %
-			[_enemy.display_name, _enemy.display_name, _active.display_name, dmg])
+		await _say("%s reflects — takes %d and slams %d back at %s!" %
+			[_enemy.display_name, self_dmg, dmg, _active.display_name])
 		if not _active.is_alive():
 			await _on_active_defeated()
 		return
@@ -366,11 +405,25 @@ func _player_attack(mv) -> void:
 func _enemy_turn() -> void:
 	if not _enemy.is_alive():
 		return
+	_enemy.tick_cooldowns()
 	if _enemy.stunned:
 		_enemy.stunned = false
 		await _say("%s is stunned and can't move!" % _enemy.display_name)
 		return
-	var mv = _enemy_pick_move()
+	# Fire a move the enemy charged last turn, or start charging a new one (then its turn ends).
+	var mv
+	if _enemy.charging != null:
+		mv = _enemy.charging
+		_enemy.charging = null
+		await _say("%s unleashes %s!" % [_enemy.display_name, mv.display_name])
+	else:
+		mv = _enemy_pick_move()
+		if mv != null and mv.charge:
+			_enemy.charging = mv
+			await _say("%s begins charging %s!" % [_enemy.display_name, mv.display_name])
+			return
+	if mv != null:
+		_enemy.start_cooldown(mv.id, mv.cooldown)
 	var power: int = mv.power if mv != null else 0
 	var result := _resolve_hit(_enemy, _active, power)
 	var dmg: int = result["dmg"]
@@ -383,14 +436,15 @@ func _enemy_turn() -> void:
 		await _say("%s attacks — %s evades!" % [_enemy.display_name, _active.display_name])
 		return
 	if result["reflected"]:
-		# Player had a reflect stance — thorns: the player takes it AND reflects it back.
+		# Player had a reflect stance: you take HALF, the enemy (attacker) takes the FULL amount back.
+		var self_dmg: int = result["self_dmg"]
 		_shake(_player_hp)
-		_pop_number(_player_hp, "-%d" % dmg, DMG_COLOR)
+		_pop_number(_player_hp, "-%d" % self_dmg, DMG_COLOR)
 		_hit_feedback(_enemy_sprite)
 		_pop_number(_enemy_sprite, "-%d" % dmg, DMG_COLOR)
 		_update_hud()
-		await _say("%s reflects %s's attack — both take %d!" %
-			[_active.display_name, _enemy.display_name, dmg])
+		await _say("%s reflects — takes %d and slams %d back at %s!" %
+			[_active.display_name, self_dmg, dmg, _enemy.display_name])
 		if not _active.is_alive():
 			await _on_active_defeated()
 		return
@@ -404,9 +458,11 @@ func _enemy_turn() -> void:
 		await _on_active_defeated()
 
 
-## The enemy's offensive moves (attack / drain / stun / reckless); null if it somehow has none.
+## The enemy's offensive moves (attack / drain / stun / reckless) that aren't on cooldown; null if
+## none are available (the caller then does a cooldown-free basic hit, power 0).
 func _enemy_pick_move():
-	var usable := _enemy.moves.filter(func(m): return m.kind in ["attack", "drain", "stun", "reckless"])
+	var usable := _enemy.moves.filter(func(m):
+		return m.kind in ["attack", "drain", "stun", "reckless"] and not _enemy.on_cooldown(m.id))
 	if usable.is_empty():
 		return null
 	return usable[_rng.randi_range(0, usable.size() - 1)]
@@ -455,6 +511,7 @@ func _set_active(c: Combatant) -> void:
 	_active.reflecting = false
 	_active.atk_bonus = 0   # buffs never carry between battles or across a switch
 	_active.counter_bonus = 0
+	_active.reset_turn_state()   # a switched-in monster starts with no cooldowns / no pending charge
 	_update_hud()
 
 
@@ -464,15 +521,17 @@ func _living_party() -> Array:
 
 ## Add a command button. Monster-select buttons pass their portrait as `icon` so you can
 ## see who you're sending in; move buttons pass none.
-func _add_button(text: String, cb: Callable, icon: Texture2D = null) -> void:
+func _add_button(text: String, cb: Callable, icon: Texture2D = null, disabled: bool = false) -> void:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(130, 40) if icon == null else Vector2(176, 84)
 	b.focus_mode = Control.FOCUS_NONE
+	b.disabled = disabled
 	if icon != null:
 		b.icon = icon
 		b.expand_icon = true   # scale the 256px portrait down into the button
-	BUTTON_POLISH.apply(b)
+	if not disabled:
+		BUTTON_POLISH.apply(b)   # no hover polish on a greyed (cooled-down) button
 	b.pressed.connect(cb)
 	_actions.add_child(b)
 	_dynamic_buttons.append(b)
