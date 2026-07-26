@@ -40,6 +40,11 @@ var _tree: SceneTree
 var _root: Node
 var _run_ctrl   # detached Run instance — reused so node resolution never drifts from run.gd
 var _random_moves := false   # see play()'s random_moves param
+var _strategy := "aggressive"   # move-selection AI; see _pick_move() / STRATEGIES
+
+## The move-selection strategies balance-sim can play (a *different* non-strategic-to-strategic
+## spread, all still simple heuristics — no lookahead). See _pick_move().
+const STRATEGIES := ["aggressive", "burst", "defensive", "support", "random"]
 
 
 func _init(tree: SceneTree) -> void:
@@ -61,8 +66,10 @@ func _init(tree: SceneTree) -> void:
 ## uniformly random move each turn (from the active monster's FULL moveset — guard/heal/buff/
 ## evade/reflect/stun/reckless included, not just attack/drain) instead of the default
 ## always-prefer-offense heuristic; see _pick_move().
-func play(starter: MonsterData, record_history := true, random_moves := false) -> void:
+func play(starter: MonsterData, record_history := true, random_moves := false,
+		strategy := "") -> void:
 	_random_moves = random_moves
+	_strategy = strategy if strategy != "" else ("random" if random_moves else "aggressive")
 	var starter_id := String(starter.id)
 	run_state.new_run(starter)
 	log.append("Starter: %s (HP %d, ATK %d)" % [
@@ -162,6 +169,17 @@ func _fight(node: Dictionary) -> void:
 		await h.use_move(move_id)
 		turns += 1
 	battles_fought += 1
+	# A fight that never resolves in 200 turns (e.g. a defensive monster out-sustaining the enemy)
+	# is a stalemate, not a win — count it as a loss so it can't inflate a strategy's win rate.
+	if not h.is_finished:
+		run_state.prune_dead()
+		lost = true
+		died_to = "%s (stalemate)" % enemy.display_name
+		died_at_row = int(node["row"])
+		log.append("Row %d [%s]: stalemate vs %s (200 turns). Run over." %
+			[int(node["row"]), String(node["type"]), enemy.display_name])
+		h.teardown()
+		return
 	run_state.prune_dead()
 	var fainted: int = before - run_state.party.size()
 	var kind: String = node["type"]
@@ -197,18 +215,68 @@ func _roster_summary() -> String:
 	return ", ".join(parts)
 
 
-## Default AI: prefer an offensive move (attack/drain); fall back to whatever's known. With
-## random_moves, instead pick uniformly at random from the FULL moveset (any kind).
+## Pick the active monster's move for this turn per `_strategy`. All heuristics, no lookahead:
+##  aggressive — first offensive move (attack/drain); the original baseline.
+##  burst      — the highest-power damaging move (attack/drain/reckless/stun).
+##  defensive  — heal (or guard) when below 45% HP, otherwise attack.
+##  support    — open with a buff (once, while atk_bonus is 0), prefer drain, otherwise attack.
+##  random     — uniformly random from the FULL moveset (guard/heal/buff/evade/reflect/... included).
 func _pick_move(h) -> String:
-	var moves = h.battle._active.moves
+	var active = h.battle._active
+	var moves: Array = active.moves
 	if moves.is_empty():
 		return ""
-	if _random_moves:
-		return moves[_run_ctrl._rng.randi_range(0, moves.size() - 1)].id
+	match _strategy:
+		"random":
+			return moves[_run_ctrl._rng.randi_range(0, moves.size() - 1)].id
+		"burst":
+			return _best_damage_move(moves)
+		"defensive":
+			if float(active.hp) / maxf(1.0, float(active.max_hp)) < 0.45:
+				var heal := _first_kind(moves, "heal")
+				if heal != "":
+					return heal
+				var guard := _first_kind(moves, "guard")
+				if guard != "":
+					return guard
+			return _offense(moves)
+		"support":
+			if active.atk_bonus == 0:
+				var buff := _first_kind(moves, "buff")
+				if buff != "":
+					return buff
+			var drain := _first_kind(moves, "drain")
+			if drain != "":
+				return drain
+			return _offense(moves)
+		_:   # aggressive
+			return _offense(moves)
+
+
+## First offensive move (attack/drain), else the first known move.
+func _offense(moves: Array) -> String:
 	for mv in moves:
 		if mv.kind == "attack" or mv.kind == "drain":
 			return mv.id
 	return moves[0].id
+
+
+## Highest-power damage-dealing move (attack/drain/reckless/stun), else the first known move.
+func _best_damage_move(moves: Array) -> String:
+	var best_id := ""
+	var best_power := -1
+	for mv in moves:
+		if mv.kind in ["attack", "drain", "reckless", "stun"] and mv.power > best_power:
+			best_power = mv.power
+			best_id = mv.id
+	return best_id if best_id != "" else moves[0].id
+
+
+func _first_kind(moves: Array, kind: String) -> String:
+	for mv in moves:
+		if mv.kind == kind:
+			return mv.id
+	return ""
 
 
 func teardown() -> void:

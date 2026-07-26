@@ -389,6 +389,13 @@ reinventing it.
   `false` and fight every battle with the run's **actual evolving party** instead of a fresh one
   reset between fights (which would silently wipe recruits and re-apply the starter boost on
   every single battle).
+- **`tools/balance_sim.gd`** — plays **50 full runs** across `RunHarness.STRATEGIES` (aggressive /
+  burst / defensive / support / random — simple heuristic move-pickers, no lookahead) × the three
+  starters, and prints an aggregate **balance report**: win rate per strategy, avg battles/nodes,
+  how far losses reach, and the biggest killers. `RunHarness.play()` gained a `strategy` param and a
+  200-turn **stalemate = loss** guard (so a defensive monster out-sustaining an enemy can't count as
+  a win). Win rates are a floor (unskilled AI), but the *relative* strategy gaps and the death
+  causes are the signal.
 - **`tools/simulate_run.gd`** — a standalone tool (same `RunHarness`) that plays whole runs and
   prints a play-by-play log plus win/loss. **Its default AI always attacks** — never guards,
   heals, or switches proactively (only when forced by a faint) — so any win rate it reports is a
