@@ -182,6 +182,20 @@ one doc written for someone playing rather than building the game.
   separate `.tscn`) opens on boot: any click dismisses it and emits `started`, and `run.gd` then
   **fades to black and back** (`_fade_out`/`_fade_in`, `_on_title_started`) around the swap to
   starter select (fresh run) or straight into an in-progress run, instead of a hard cut.
+- **Screen transitions** (`scripts/screen_transition.gd`, `ScreenTransition`): a reusable
+  cover→swap→reveal played around **every** node screen change — `run.gd` `await`s
+  `_transition.cover(kind)` before showing/tearing down a battle / power-up chooser / heal / treasure
+  / teleport, then `reveal(kind)` after (in `_enter_room` / `_do_battle` / `_on_battle_finished` /
+  `_open_powerup_chooser`). The title `_fade_out`/`_fade_in` are now thin wrappers over it, so there's
+  **one** transition implementation. It runs on a top-most (`layer = 60`) input-blocking black
+  `ColorRect`. **Every `Kind` is a plain fade today** — the enum (FADE/BATTLE/POWERUP/HEAL/TREASURE/
+  TELEPORT) is the **seam for varied per-type transitions later**: implement a `_cover_<style>`/
+  `_reveal_<style>` pair (iris/swipe/shatter/pixelate via a shader, or a themed flash) and route the
+  Kind to it in `screen_transition.gd` — call sites don't change. `docs/DESIGN.md` → "Screen
+  transitions" has the full plan; `test_screen_transition.gd` pins the cover/reveal contract.
+  These awaits made `_enter_room`/`_do_battle`/`_on_battle_finished`/`_open_powerup_chooser`
+  **coroutines** — safe because no test/harness drives them directly (they use `room_entered` on the
+  view or the resolution methods like `_heal_party`, which stay synchronous and un-transitioned).
 - **Escape opens Settings from anywhere** (title, starter select, dungeon, battle) —
   `run.gd::_open_settings()` adds `scripts/settings_menu.gd` (`SettingsMenu`, built in code), a
   small overlay with an `HSlider` per audio bus (`SoundManager.SFX_BUS`/`MUSIC_BUS`) wired
