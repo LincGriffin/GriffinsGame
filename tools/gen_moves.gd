@@ -22,7 +22,7 @@ const MOVES := [
 	{"id": "evade",   "name": "Evade",           "kind": "evade",    "power": 0,  "desc": "Slip away — the next hit misses entirely."},
 	{"id": "reflect", "name": "Reflect",         "kind": "reflect",  "power": 0,  "desc": "Brace and reflect the next hit back at its attacker."},
 	{"id": "mend",    "name": "Mend",            "kind": "heal",     "power": 8,  "desc": "Recover some HP."},
-	{"id": "drain",   "name": "Drain",           "kind": "drain",    "power": 2,  "desc": "Bite and siphon — heal for half the damage."},
+	{"id": "drain",   "name": "Drain",           "kind": "drain",    "power": 1,  "desc": "Bite and siphon — heal for half the damage."},
 	{"id": "focus",   "name": "Focus",           "kind": "buff",     "power": 3,  "desc": "Steel yourself — raise attack for the fight."},
 	{"id": "shock",   "name": "Shock",           "kind": "stun",     "power": 4,  "desc": "A jolting strike — the target reels and can't act next turn."},
 	{"id": "reckless_swing", "name": "Reckless Swing", "kind": "reckless", "power": 14, "desc": "A wild, all-out swing that hurts the user too."},

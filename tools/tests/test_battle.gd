@@ -103,6 +103,7 @@ func test_new_run_boosts_the_chosen_starter() -> void:
 	check(c.max_hp > slime.max_hp, "the starter's max hp is boosted above its base data")
 	eq(c.hp, c.max_hp, "the boosted starter enters at full hp")
 	check(c.attack > slime.attack, "the starter's attack is boosted above its base data")
+	check(c.defense > slime.defense, "the starter's defense is boosted above its base data")
 	rs.free()
 
 

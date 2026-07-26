@@ -26,8 +26,8 @@ func test_for_monster_is_null_safe() -> void:
 
 func test_every_roster_id_is_looked_up_safely() -> void:
 	var ok := true
-	for id in ["chicken", "slime", "bat", "rat", "skeleton", "goblin", "spider",
-			"golem", "wraith", "gremlin_knob", "griffin", "hydra"]:
+	for id in ["chicken", "slime", "bat", "rat", "skeleton", "kobold", "myconid", "wisp", "imp",
+			"goblin", "spider", "golem", "wraith", "gremlin_knob", "griffin", "hydra"]:
 		var m = load("res://assets/data/monsters/%s.tres" % id)
 		# Null (no art yet) is fine; a crash or a wrong type is not.
 		var tex = PORTRAITS.for_monster(m)

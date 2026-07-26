@@ -7,5 +7,5 @@ script = ExtResource("1_t3dg8")
 id = "drain"
 display_name = "Drain"
 kind = "drain"
-power = 2
+power = 1
 description = "Bite and siphon — heal for half the damage."
