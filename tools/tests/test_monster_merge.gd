@@ -29,6 +29,25 @@ func _mk(id: String, hp: int, atk: int, def: int, spd: int, move_ids: Array, tie
 	return COMBATANT.from_monster(md)
 
 
+func test_fuse_marks_the_result_fused() -> void:
+	var a := _mk("aa", 20, 8, 3, 5, ["x"])
+	var b := _mk("bb", 14, 4, 6, 9, ["y"])
+	check(not a.is_fused and not b.is_fused, "fresh parents are not fused")
+	var f := MERGE.fuse(a, b)
+	check(f.is_fused, "the fused result is flagged is_fused (never an eligible partner again)")
+
+
+func test_unfused_filter_excludes_fused() -> void:
+	# The never-fused-only eligibility rule the offer uses.
+	var a := _mk("aa", 20, 8, 3, 5, ["x"])
+	var b := _mk("bb", 14, 4, 6, 9, ["y"])
+	var f := MERGE.fuse(a, b)
+	var party := [a, b, f]
+	var unfused := party.filter(func(c): return not c.is_fused)
+	eq(unfused.size(), 2, "only the two never-fused monsters are eligible partners")
+	check(not unfused.has(f), "the fused monster is excluded")
+
+
 func test_stats_are_per_stat_max_plus_bonus() -> void:
 	var a := _mk("aa", 20, 8, 3, 5, ["x"])
 	var b := _mk("bb", 14, 4, 6, 9, ["y"])

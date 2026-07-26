@@ -30,6 +30,7 @@ static func fuse(a: Combatant, b: Combatant) -> Combatant:
 	c.defense = int(max(a.defense, b.defense)) + DEF_BONUS
 	c.speed = int(max(a.speed, b.speed))   # ignored for turn order, kept sane anyway
 	c.moves = _merged_moves(a, b)
+	c.is_fused = true                      # a fused monster can't itself be a merge partner later
 	return c
 
 

@@ -23,6 +23,7 @@ const EFFECTS := {
 	"heal_sparkle": {"amount": 20, "life": 0.60, "vmin": 60,  "vmax": 140, "grav": Vector2(0, -40),     "smin": 3.0, "smax": 5.0, "spread": 40,  "dir": Vector2.UP,    "color": Color(0.42, 0.95, 0.52)},
 	"buff_glow":    {"amount": 24, "life": 0.50, "vmin": 80,  "vmax": 160, "grav": Vector2.ZERO,        "smin": 4.0, "smax": 7.0, "spread": 180, "dir": Vector2.RIGHT, "color": Color(1.00, 0.82, 0.30)},
 	"drain_wisp":   {"amount": 18, "life": 0.55, "vmin": 80,  "vmax": 160, "grav": Vector2(0, -60),     "smin": 3.0, "smax": 6.0, "spread": 60,  "dir": Vector2.UP,    "color": Color(0.60, 0.35, 0.80)},
+	"merge":        {"amount": 40, "life": 0.60, "vmin": 180, "vmax": 340, "grav": Vector2.ZERO,        "smin": 5.0, "smax": 9.0, "spread": 180, "dir": Vector2.RIGHT, "color": Color(1.00, 0.92, 0.55)},
 }
 
 

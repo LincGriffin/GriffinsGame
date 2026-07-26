@@ -105,9 +105,10 @@ func _build(name: String) -> Array:
 		"merge_select":
 			if not ResourceLoader.exists("res://scripts/merge_select.gd"):
 				return []
-			var rs3 := _run_state(["chicken", "bat", "slime", "rat", "skeleton"])
+			var rs3 := _run_state(["chicken", "bat", "slime"])
 			var sel3 = load("res://scripts/merge_select.gd").new()
-			sel3.setup(rs3.living(), _m("goblin"))
+			# The post-capture merge offer: fuse the newly captured monster with a party member.
+			sel3.setup_offer(_m("goblin"), rs3.living(), false)
 			return [rs3, _add(sel3)]
 		"vfx":
 			return _build_vfx()

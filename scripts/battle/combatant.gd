@@ -12,6 +12,8 @@ var attack: int
 var defense: int
 var speed: int
 var is_boss: bool = false
+var is_fused := false             # true if this monster is the result of a merge — a fused monster
+                                  # (and fused result) is not an eligible merge partner (never-fused only)
 var defending := false
 var atk_bonus := 0               # temporary attack buff (from "buff" moves); reset each battle/switch-in
 var counter_bonus := 0           # one-shot attack bonus from guard/evade — added to the NEXT attack, then cleared
