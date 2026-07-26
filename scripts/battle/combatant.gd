@@ -29,6 +29,36 @@ var evading := false     # the next hit against this combatant deals 0 damage
 var reflecting := false  # the next hit against this combatant is redirected to its attacker
 var stunned := false     # skip this combatant's next turn
 
+# Move cooldowns (move id -> turns remaining) and a charging move (a MoveData mid-charge, or null).
+# Both are per-combatant and reset on switch-in; battle.gd drives them (see MoveData.cooldown/charge).
+var cooldowns: Dictionary = {}
+var charging = null      # a MoveData being charged this turn, fires next turn (null = not charging)
+
+
+## Count down every cooldown by one turn (called at the start of this combatant's turn).
+func tick_cooldowns() -> void:
+	for id in cooldowns.keys():
+		cooldowns[id] -= 1
+		if cooldowns[id] <= 0:
+			cooldowns.erase(id)
+
+
+func on_cooldown(id: String) -> bool:
+	return int(cooldowns.get(id, 0)) > 0
+
+
+## Put move `id` on cooldown for `turns` turns. +1 so it survives the tick on the caster's very
+## next turn and is blocked for exactly `turns` of the caster's turns.
+func start_cooldown(id: String, turns: int) -> void:
+	if turns > 0:
+		cooldowns[id] = turns + 1
+
+
+## Clear all per-turn move state (on switch-in / battle start), same spirit as atk_bonus resetting.
+func reset_turn_state() -> void:
+	cooldowns.clear()
+	charging = null
+
 
 func is_alive() -> bool:
 	return hp > 0

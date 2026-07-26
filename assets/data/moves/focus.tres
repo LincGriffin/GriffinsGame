@@ -9,4 +9,5 @@ display_name = "Focus"
 kind = "buff"
 power = 3
 description = "Steel yourself — raise attack for the fight."
+cooldown = 1
 vfx = "buff_glow"

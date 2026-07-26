@@ -8,3 +8,4 @@ id = "evade"
 display_name = "Evade"
 kind = "evade"
 description = "Slip away — the next hit misses entirely."
+cooldown = 1

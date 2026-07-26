@@ -9,4 +9,5 @@ display_name = "Shock"
 kind = "stun"
 power = 4
 description = "A jolting strike — the target reels and can't act next turn."
+cooldown = 1
 vfx = "impact"

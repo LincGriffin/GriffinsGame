@@ -8,4 +8,5 @@ id = "slam"
 display_name = "Slam"
 power = 9
 description = "A crushing blow."
+cooldown = 1
 vfx = "impact"

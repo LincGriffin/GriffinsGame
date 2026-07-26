@@ -21,6 +21,23 @@ func test_defending_halves_damage() -> void:
 	eq(Combatant.compute_damage(a, b), 5, "defending halves the hit")
 
 
+func test_cooldown_blocks_reuse_for_one_turn_then_expires() -> void:
+	var c := Combatant.make("c", 20, 5, 0, 5)
+	check(not c.on_cooldown("slam"), "a move starts off cooldown")
+	c.start_cooldown("slam", 1)          # used a 1-turn-cooldown move
+	c.tick_cooldowns()                    # the caster's next turn begins
+	check(c.on_cooldown("slam"), "still on cooldown the very next turn (can't be used)")
+	c.tick_cooldowns()                    # the turn after
+	check(not c.on_cooldown("slam"), "available again the following turn")
+
+
+func test_zero_cooldown_never_blocks() -> void:
+	var c := Combatant.make("c", 20, 5, 0, 5)
+	c.start_cooldown("strike", 0)         # the basic attack has cooldown 0
+	c.tick_cooldowns()
+	check(not c.on_cooldown("strike"), "a 0-cooldown move is never blocked")
+
+
 func test_take_damage_clamps_to_zero() -> void:
 	var c := Combatant.make("C", 10, 1, 1, 1)
 	var dealt := c.take_damage(999)

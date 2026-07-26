@@ -15,6 +15,17 @@ extends Resource
 @export var power: int = 0
 @export var description: String = ""
 
+## Turns this move is unavailable after use (0 = usable every turn). Non-basic moves get 1, so they
+## can only be used every other turn; the basic Strike stays 0. Battle enforces it per-combatant
+## (the command menu greys out a cooled move; the enemy picker skips one). See scripts/battle.gd.
+## Editable per-move (gen_moves.gd, or the Moves editor dock).
+@export var cooldown: int = 0
+
+## When true, the move takes a full turn to CHARGE before it fires: on the turn it's chosen the
+## caster only charges (the opponent still acts), then the move auto-resolves on the caster's next
+## turn. A telegraphed, higher-risk hit. Off by default; toggle per-move. Handled on both sides.
+@export var charge: bool = false
+
 ## Optional per-move effects, referenced by id so moves can share or swap them (see battle.gd).
 ## Both are OPTIONAL and fall back gracefully:
 ##   sfx — a sound id under assets/audio/sfx/<sfx>.{ogg,wav,mp3} (SfxLibrary). Blank → the

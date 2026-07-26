@@ -9,4 +9,5 @@ display_name = "Reckless Swing"
 kind = "reckless"
 power = 14
 description = "A wild, all-out swing that hurts the user too."
+cooldown = 1
 vfx = "impact"

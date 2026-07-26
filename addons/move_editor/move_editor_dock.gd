@@ -28,6 +28,8 @@ var _id_edit: LineEdit
 var _name_edit: LineEdit
 var _kind_option: OptionButton
 var _power_spin: SpinBox
+var _cooldown_spin: SpinBox
+var _charge_check: CheckBox
 var _desc_edit: TextEdit
 var _sfx_edit: LineEdit
 var _vfx_edit: LineEdit
@@ -98,6 +100,17 @@ func _build_ui() -> void:
 
 	_power_spin = _add_spin_field("Power", 0, 999)
 	_power_spin.value_changed.connect(func(v): _set_field("power", int(v)))
+
+	_cooldown_spin = _add_spin_field("Cooldown", 0, 9)
+	_cooldown_spin.value_changed.connect(func(v): _set_field("cooldown", int(v)))
+
+	var charge_row := HBoxContainer.new()
+	_form.add_child(charge_row)
+	charge_row.add_child(_label("Charge"))
+	_charge_check = CheckBox.new()
+	_charge_check.text = "takes a turn to charge"
+	_charge_check.toggled.connect(func(on): _set_field("charge", on))
+	charge_row.add_child(_charge_check)
 
 	_form.add_child(_label("Description"))
 	_desc_edit = TextEdit.new()
@@ -212,6 +225,8 @@ func _load_move(mv: MoveData) -> void:
 		_name_edit.text = mv.display_name
 		_select_kind(mv.kind)
 		_power_spin.value = mv.power
+		_cooldown_spin.value = mv.cooldown
+		_charge_check.button_pressed = mv.charge
 		_desc_edit.text = mv.description
 		_sfx_edit.text = mv.sfx
 		_vfx_edit.text = mv.vfx

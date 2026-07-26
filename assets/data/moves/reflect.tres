@@ -7,4 +7,5 @@ script = ExtResource("1_ny7ey")
 id = "reflect"
 display_name = "Reflect"
 kind = "reflect"
-description = "Brace and reflect the next hit back at its attacker."
+description = "Take half the next hit and slam its full force back."
+cooldown = 1
