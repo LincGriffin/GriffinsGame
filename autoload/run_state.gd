@@ -75,6 +75,23 @@ func merge(a: Combatant, b: Combatant) -> Combatant:
 	return fused
 
 
+## Fuse a NEWLY CAPTURED monster (not yet in the party) with an existing `partner`. The capture
+## is spent into the fusion (never added on its own) and `partner` is replaced by the result, so
+## the party size is UNCHANGED — the post-battle "merge the new monster?" offer (see run.gd). The
+## `partner` should be a never-fused member (`not is_fused`); the fused result is `is_fused`.
+func merge_incoming(partner: Combatant, incoming: MonsterData) -> Combatant:
+	var fused: Combatant = MONSTER_MERGE.fuse(partner, Combatant.from_monster(incoming))
+	party = party.filter(func(c): return c != partner)
+	party.append(fused)
+	party_changed.emit()
+	return fused
+
+
+## Living members that have never been part of a fusion — the eligible partners for merge_incoming.
+func unfused_living() -> Array:
+	return living().filter(func(c): return not c.is_fused)
+
+
 ## Drop any monsters that were knocked out — permadeath for the rest of the run.
 func prune_dead() -> void:
 	var before := party.size()
@@ -104,6 +121,7 @@ func serialize_party() -> Array:
 			"defense": c.defense,
 			"speed": c.speed,
 			"is_boss": c.is_boss,
+			"is_fused": c.is_fused,
 			"atk_bonus": c.atk_bonus,
 			"tint": c.source.tint if c.source != null else Color(0.6, 0.6, 0.6),
 			"move_ids": move_ids,
@@ -142,6 +160,7 @@ func _combatant_from_save(e: Dictionary) -> Combatant:
 	c.defense = int(e.get("defense", 0))
 	c.speed = int(e.get("speed", 0))
 	c.is_boss = bool(e.get("is_boss", false))
+	c.is_fused = bool(e.get("is_fused", false))
 	c.atk_bonus = int(e.get("atk_bonus", 0))
 	var moves: Array = []
 	for mid in e.get("move_ids", []):

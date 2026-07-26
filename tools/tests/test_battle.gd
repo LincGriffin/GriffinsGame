@@ -156,6 +156,32 @@ func test_serialize_restore_preserves_live_party() -> void:
 	rs2.free()
 
 
+func test_merge_incoming_fuses_capture_with_a_partner() -> void:
+	# The post-capture offer: fuse a NEWLY CAPTURED monster (not in the party) with an existing
+	# partner. Party size is unchanged — the capture is spent into the fusion, the partner replaced.
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	rs.add_monster(load("res://assets/data/monsters/bat.tres"))
+	var before: int = rs.party.size()
+	var partner = rs.party[1]   # the bat
+	var fused = rs.merge_incoming(partner, load("res://assets/data/monsters/goblin.tres"))
+	eq(rs.party.size(), before, "party size is unchanged (capture consumed, partner replaced)")
+	check(not rs.party.has(partner), "the chosen partner was replaced")
+	check(rs.party.has(fused), "the fused monster is in the party")
+	check(fused.is_fused, "the result is flagged fused")
+	rs.free()
+
+
+func test_unfused_living_excludes_fused_members() -> void:
+	var rs := _new_run_state()
+	rs.new_run(_slime())
+	rs.add_monster(load("res://assets/data/monsters/bat.tres"))
+	rs.merge_incoming(rs.party[1], load("res://assets/data/monsters/goblin.tres"))  # party[1] -> fused
+	var unfused: Array = rs.unfused_living()
+	check(unfused.size() == 1 and not unfused[0].is_fused, "only the never-fused starter is eligible")
+	rs.free()
+
+
 func test_serialize_restore_rebuilds_a_fused_monster() -> void:
 	# The hard case: a merged monster's MonsterData is generated at run time with NO file on disk,
 	# so restore must rebuild it from the saved fields rather than loading an id.
@@ -178,6 +204,7 @@ func test_serialize_restore_rebuilds_a_fused_monster() -> void:
 	eq([c.max_hp, c.attack, c.defense], fused_stats, "fused monster's stats preserved")
 	eq(c.moves.size(), fused_moves, "fused monster's merged moveset preserved")
 	check(c.source != null, "restored fused monster still has a (synthetic) source for tint fallback")
+	check(c.is_fused, "the is_fused flag round-trips (so a resumed run keeps merge eligibility right)")
 	rs2.free()
 
 

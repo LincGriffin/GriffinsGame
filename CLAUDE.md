@@ -123,17 +123,30 @@ one doc written for someone playing rather than building the game.
 - Winning a wild battle **auto-recruits** the defeated monster (up to `RunState.PARTY_CAP`, currently 5).
   Defeating the **boss (the Hydra)** wins the run; a party wipe shows GAME OVER (press **R** for a fresh
   run + new starter).
-- **Monster merge (Phase 6).** Win a wild/elite fight while the party is **at the cap** and a merge
-  overlay (`scripts/merge_select.gd`, `MergeSelect`) appears: pick **two** party members to fuse into
-  one — freeing a slot — and the new monster is then recruited; **Skip** declines (no recruit, the
-  pre-merge behavior). The fusion is pure/static in `scripts/monster_merge.gd` (`MonsterMerge.fuse`,
-  unit-tested): **stats** = per-stat **max** of the two parents + a small bonus (`HP_MULT`/`ATK_BONUS`/
-  `DEF_BONUS` — never the additive sum); **moves** = the **union** of both movesets, de-duped, capped
-  at `MAX_MOVES`; **identity** = a special parent pair (`scripts/data/fusion_table.gd`, keyed by the
-  two ids sorted) becomes that **specific monster** (its portrait/name), every other pair becomes a
-  generic **"Fused &lt;stronger parent&gt;"** with a blended tint and no portrait (tint fallback).
-  `RunState.merge(a, b)` removes both and appends the fused Combatant (net −1, freeing the slot).
-  Headless `RunHarness` just skips the recruit at cap (no interactive merge).
+- **Monster merge (Phase 6 fusion rules; Phase 21 post-capture offer).** The fusion math is
+  pure/static in `scripts/monster_merge.gd` (`MonsterMerge.fuse`, unit-tested): **stats** = per-stat
+  **max** of the two parents + a small bonus (`HP_MULT`/`ATK_BONUS`/`DEF_BONUS` — never the additive
+  sum); **moves** = the **union** of both movesets, de-duped, capped at `MAX_MOVES`; **identity** = a
+  special parent pair (`scripts/data/fusion_table.gd`, keyed by the two ids sorted) becomes that
+  **specific monster** (portrait/name), every other pair becomes a generic **"Fused &lt;stronger
+  parent&gt;"** with a blended tint and no portrait (tint fallback). `fuse` sets `is_fused` on the
+  result.
+- **Merge happens as a post-capture OFFER (Phase 21), not only at cap.** After a won wild/elite fight,
+  if the party has a **never-fused** member (`Combatant.is_fused == false`; `RunState.unfused_living()`),
+  `run.gd::_resolve_recruit` opens the offer overlay (`scripts/merge_select.gd`, `MergeSelect`,
+  `setup_offer(incoming, candidates, at_cap)`): fuse the **newly captured** monster with one chosen
+  partner, or decline. **Below cap** declining recruits the capture as-is (party grows); **at cap**
+  declining **loses** the capture (it isn't added). Fusing uses `RunState.merge_incoming(partner,
+  incoming)` — the capture is spent into the fusion and the partner replaced, so **party size is
+  unchanged** (net 0), which is how it works at the cap too. Signals `merged(partner)` / `declined`.
+  On Merge the overlay plays a **self-contained fuse animation** (the two cards converge, a `merge`
+  `VfxLibrary` CPUParticles2D burst + white flash, then the fused result reveals) before emitting —
+  reuses the Phase 18 vfx system; cosmetic. The old at-cap "pick any two to free a slot" flow is
+  **retired** (`_open_merge_prompt` gone; `RunState.merge(a,b)` stays as a primitive + its test).
+  Headless-safe: with no live view or no unfused partner, `_resolve_recruit` recruits when there's
+  room and skips at cap; `RunHarness` recruits via `add_monster` directly and never hits this path.
+  `is_fused` is persisted by `RunState.serialize_party`/`restore_party` (Phase 19) so a resumed run
+  keeps eligibility correct.
 - **Roster is tiered (Phase 5).** `MonsterData` carries a `tier` (0 = weakest … 3 = late) and an
   `is_elite` flag. Wild encounters **scale with map depth** — `run.gd` groups the wild pool by tier
   and `_pick_wild(row)` draws a depth-appropriate monster (deeper rows → tougher, with a chance to

@@ -279,15 +279,8 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 		Battle.Result.PLAYER_WON:
 			if enemy.is_boss:
 				_win()
-			elif _gs.is_full():
-				# Party's full — offer a merge to make room (or skip the recruit).
-				_open_merge_prompt(id, enemy)
 			else:
-				if _gs.add_monster(enemy):
-					_recruited.append(String(enemy.id))
-				if enemy.is_elite:
-					_heal_party()   # elite bonus: patch the party up after the tough fight
-				_advance(id)
+				_resolve_recruit(id, enemy)
 		Battle.Result.FLED:
 			# Stay put in the (uncleared) room; step out and back to re-engage.
 			_busy = false
@@ -295,28 +288,40 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 	await _transition.reveal(ScreenTransition.Kind.BATTLE)
 
 
-## Party-full recruit: pop the merge overlay. On Merge, fuse the two picks (freeing a slot) and
-## recruit the new monster; on Skip, keep the party as-is and don't recruit. Either way the elite
-## heal (if any) still applies, then the room clears. Headless-safe: with no live view it just
-## skips the recruit, matching the pre-merge behavior.
-func _open_merge_prompt(id: int, enemy: MonsterData) -> void:
-	if _view == null:
+## Resolve a won wild/elite fight's recruit. If the party has a never-fused member, offer to fuse the
+## newly captured monster with one of them (the merge overlay); otherwise just recruit it (when there
+## is room). Headless-safe: with no live view (or no eligible partner) it recruits when there's room
+## and skips at cap — RunHarness drives recruiting via add_monster directly, not this path.
+func _resolve_recruit(id: int, enemy: MonsterData) -> void:
+	var unfused: Array = _gs.unfused_living()
+	if _view == null or unfused.is_empty():
+		if not _gs.is_full() and _gs.add_monster(enemy):
+			_recruited.append(String(enemy.id))
 		if enemy.is_elite:
 			_heal_party()
 		_advance(id)
 		return
+	_open_merge_offer(id, enemy, unfused)
+
+
+## The post-capture merge offer: fuse the new monster with a chosen never-fused partner (party size
+## unchanged), or decline. Declining recruits the monster as-is when there's room; AT CAP declining
+## loses the new monster (it isn't added). The elite heal still applies either way.
+func _open_merge_offer(id: int, enemy: MonsterData, candidates: Array) -> void:
 	_view.set_walking(false)
+	var at_cap: bool = _gs.is_full()
 	var sel: MergeSelect = MERGE_SELECT.new()
-	sel.setup(_gs.living(), enemy)
-	sel.merged.connect(func(a, b):
-		_gs.merge(a, b)
-		if _gs.add_monster(enemy):
-			_recruited.append(String(enemy.id))
+	sel.setup_offer(enemy, candidates, at_cap)
+	sel.merged.connect(func(partner):
+		_gs.merge_incoming(partner, enemy)
+		_recruited.append(String(enemy.id))
 		if enemy.is_elite:
 			_heal_party()
 		sel.queue_free()
 		_advance(id))
-	sel.skipped.connect(func():
+	sel.declined.connect(func():
+		if not at_cap and _gs.add_monster(enemy):
+			_recruited.append(String(enemy.id))
 		if enemy.is_elite:
 			_heal_party()
 		sel.queue_free()
