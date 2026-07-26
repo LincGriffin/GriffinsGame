@@ -9,3 +9,4 @@ display_name = "Mend"
 kind = "heal"
 power = 8
 description = "Recover some HP."
+vfx = "heal_sparkle"

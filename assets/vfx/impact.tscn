@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/vfx_oneshot.gd" id="1_uschs"]
+
+[node name="impact" type="Node2D" unique_id=889645428]
+script = ExtResource("1_uschs")
+life = 0.65
+
+[node name="Particles" type="CPUParticles2D" parent="." unique_id=698586557]
+emitting = false
+amount = 30
+lifetime = 0.45
+one_shot = true
+explosiveness = 1.0
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 300)
+initial_velocity_min = 120.0
+initial_velocity_max = 300.0
+scale_amount_min = 5.0
+scale_amount_max = 9.0
+color = Color(0.92, 0.92, 0.96, 1)

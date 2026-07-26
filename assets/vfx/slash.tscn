@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/vfx_oneshot.gd" id="1_0enug"]
+
+[node name="slash" type="Node2D" unique_id=1810580574]
+script = ExtResource("1_0enug")
+life = 0.55
+
+[node name="Particles" type="CPUParticles2D" parent="." unique_id=1675300760]
+emitting = false
+amount = 24
+lifetime = 0.35
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 220.0
+initial_velocity_max = 380.0
+scale_amount_min = 3.0
+scale_amount_max = 6.0
+color = Color(0.8, 0.95, 1, 1)

@@ -14,6 +14,23 @@ func test_move_roster_present() -> void:
 		eq(mv.kind, expected[id], "%s has kind %s" % [id, expected[id]])
 
 
+func test_moves_carry_optional_effect_ids() -> void:
+	# Every move exposes sfx/vfx (default blank), and the example-assigned effects are present.
+	var mend = load("res://assets/data/moves/mend.tres")
+	check(mend.sfx == "", "an un-overridden move has a blank sfx (falls back to move_<kind>)")
+	eq(mend.vfx, "heal_sparkle", "mend carries its example vfx id")
+	var guard = load("res://assets/data/moves/guard.tres")
+	eq(guard.vfx, "", "a move with no assigned effect has a blank vfx")
+
+
+func test_moves_can_share_a_vfx() -> void:
+	# Sharing is the whole point of referencing by id — strike and heavy both reuse "slash".
+	var strike = load("res://assets/data/moves/strike.tres")
+	var heavy = load("res://assets/data/moves/heavy.tres")
+	eq(strike.vfx, "slash", "strike uses the slash effect")
+	eq(heavy.vfx, strike.vfx, "heavy shares the same effect id (no duplicate asset)")
+
+
 func test_heavy_hits_harder_than_strike() -> void:
 	var strike = load("res://assets/data/moves/strike.tres")
 	var heavy = load("res://assets/data/moves/heavy.tres")
