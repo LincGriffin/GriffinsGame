@@ -172,6 +172,20 @@ one doc written for someone playing rather than building the game.
   position-jitter **shake** (`_hit_feedback`/`_shake`) — the enemy sprite for the player's own
   attacks, just the player's HP bar (no flash — there's no player sprite to flash) for the
   enemy's. All of this is cosmetic only; it doesn't touch combat math or turn order.
+- **Per-move effects (Phase 18).** `MoveData` carries optional `sfx` / `vfx` **id** fields, so an
+  effect can be **shared or swapped by editing one string** (e.g. `strike` & `heavy` both use
+  `slash`). Battle plays them when a move occurs — `_move_sfx(mv)` returns `mv.sfx` or the per-kind
+  default `"move_<kind>"` (so audio is unchanged unless overridden); `_play_vfx(anchor, mv.vfx)`
+  instantiates a `VfxLibrary` PackedScene (`assets/vfx/<id>.tscn`) at the target (`_enemy_sprite`)
+  for attacks / the caster (`_player_hp`) for self-moves & enemy hits, into a full-rect `_vfx_holder`.
+  **Both are optional & null-safe** (blank/missing = today's flash/shake/popup only), so it's cosmetic
+  and headless-safe. `_play_vfx` is **fire-and-forget** (call sites don't `await` it — the internal
+  await only defers the free); the effect scene self-frees (`scripts/vfx_oneshot.gd`) and battle
+  safety-frees after `VFX_MAX_TIME` (a `var`, zeroed in `BattleHarness` fast tests like `STEP`).
+  Effects are **`CPUParticles2D`** (the renderer is GL Compatibility — GPU particles are unreliable),
+  built by `tools/gen_vfx.gd`. Author via the Moves dock (sfx/vfx fields + Browse, using the
+  generalized `AssetLink.import_file` which keeps the source extension) or `gen_moves.gd`. See
+  `assets/vfx/README.md`; `tools/screenshot.gd`'s `vfx` shot renders them for a look.
 - **`scripts/button_polish.gd`** (`ButtonPolish.apply(button)`) adds a small hover scale-up
   tween + a `ui_hover` sound to any dynamically-created `Button` — used on starter-select cards,
   battle's command/monster-select buttons, and Settings' Close button.

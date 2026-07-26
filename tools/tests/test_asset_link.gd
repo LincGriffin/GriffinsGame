@@ -48,6 +48,26 @@ func test_import_rejects_empty_id() -> void:
 	check(not result.ok, "an empty id (monster not yet saved) is rejected")
 
 
+func test_import_file_preserves_the_source_extension() -> void:
+	# import_file backs the move dock's sfx/vfx upload — the copy keeps .wav/.ogg/.tscn etc.
+	var src := SRC_DIR + "boom.wav"
+	var f := FileAccess.open(src, FileAccess.WRITE)
+	f.store_string("fake wav bytes")
+	f.close()
+	var result = ASSET_LINK.import_file(ProjectSettings.globalize_path(src), DEST_DIR, "fire_blast")
+	check(result.ok, "import_file succeeds for an existing source + id")
+	check(FileAccess.file_exists(ProjectSettings.globalize_path(DEST_DIR + "fire_blast.wav")),
+		"the file lands at <dir>/<id>.<source ext> (extension preserved)")
+	check(String(result.path).ends_with(".wav"), "the returned path keeps the source extension")
+
+
+func test_import_file_rejects_missing_source_and_empty_id() -> void:
+	var missing := ProjectSettings.globalize_path(SRC_DIR + "nope.wav")
+	check(not ASSET_LINK.import_file(missing, DEST_DIR, "x").ok, "a missing source is rejected")
+	check(not ASSET_LINK.import_file(ProjectSettings.globalize_path(SRC_FILE), DEST_DIR, "").ok,
+		"an empty id is rejected")
+
+
 func test_clear_removes_the_file() -> void:
 	ASSET_LINK.import_image(ProjectSettings.globalize_path(SRC_FILE), DEST_DIR, "cave_troll")
 	check(ASSET_LINK.clear_image(DEST_DIR, "cave_troll"), "clear reports success")

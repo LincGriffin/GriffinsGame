@@ -68,6 +68,7 @@ func start(party: Array, enemy: MonsterData, lead_id: String = "", fast := true,
 	battle = BATTLE_SCENE.instantiate()
 	if fast:
 		battle.STEP = 0.0
+		battle.VFX_MAX_TIME = 0.0   # don't leave per-move effect nodes pending in fast tests
 	battle.setup(enemy)
 	var armed := _arm_beat()
 	_root.add_child(battle)

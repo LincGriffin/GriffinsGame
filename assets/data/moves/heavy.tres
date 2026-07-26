@@ -8,3 +8,4 @@ id = "heavy"
 display_name = "Heavy Blow"
 power = 5
 description = "A powerful strike."
+vfx = "slash"

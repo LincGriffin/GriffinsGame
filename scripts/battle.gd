@@ -55,6 +55,11 @@ const SHAKE_STRENGTH := 6.0
 ## global class cache has been rebuilt yet (same reason the generators use load()).
 const PORTRAITS := preload("res://scripts/data/portraits.gd")
 const BUTTON_POLISH := preload("res://scripts/button_polish.gd")
+const VFX_LIBRARY := preload("res://scripts/data/vfx_library.gd")
+
+## Safety net: a move's vfx scene is freed after this long even if it never frees itself (the
+## generated ones self-free earlier via vfx_oneshot.gd). A var — a test harness can zero it.
+var VFX_MAX_TIME := 1.2
 
 var _enemy_data: MonsterData
 var _party: Array = []        # Array[Combatant] — the run's monsters (shared with RunState)
@@ -67,6 +72,7 @@ var _sound: Node              # the SoundManager autoload (looked up at runtime;
 var _dynamic_buttons: Array = []   # command / monster-select buttons created on the fly
 var _hp_tweens: Dictionary = {}    # ProgressBar -> Tween (killed/replaced on each HUD update)
 var _hp_styles: Dictionary = {}    # ProgressBar -> its own StyleBoxFlat "fill" override
+var _vfx_holder: Control = null    # full-rect layer that per-move effect scenes are spawned into
 
 @onready var _enemy_name: Label = $Panel/Col/EnemyName
 @onready var _enemy_hp: ProgressBar = $Panel/Col/EnemyHP
@@ -104,6 +110,14 @@ func _ready() -> void:
 	for c in _actions.get_children():
 		_actions.remove_child(c)
 		c.queue_free()
+
+	# A full-rect layer on top that per-move visual effects are spawned into (see _play_vfx).
+	_vfx_holder = Control.new()
+	_vfx_holder.name = "VfxHolder"
+	_vfx_holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_vfx_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE   # never eat input
+	_vfx_holder.z_index = 20
+	add_child(_vfx_holder)
 
 	_update_hud()
 	_intro()
@@ -213,24 +227,28 @@ func _on_flee() -> void:
 func _resolve_move(mv) -> void:
 	match mv.kind:
 		"guard":
-			_sfx("move_guard")
+			_sfx(_move_sfx(mv))
+			_play_vfx(_player_hp, mv.vfx)
 			_active.defending = true
 			_active.counter_bonus = COUNTER_ATK   # brace, then hit back harder next turn
 			await _say("%s guards — braced to strike back!" % _active.display_name)
 			await _end_player_turn()
 		"evade":
-			_sfx("move_evade")
+			_sfx(_move_sfx(mv))
+			_play_vfx(_player_hp, mv.vfx)
 			_active.evading = true
 			_active.counter_bonus = COUNTER_ATK
 			await _say("%s prepares to evade — and counter!" % _active.display_name)
 			await _end_player_turn()
 		"reflect":
-			_sfx("move_reflect")
+			_sfx(_move_sfx(mv))
+			_play_vfx(_player_hp, mv.vfx)
 			_active.reflecting = true
 			await _say("%s readies a reflect!" % _active.display_name)
 			await _end_player_turn()
 		"heal":
-			_sfx("move_heal")
+			_sfx(_move_sfx(mv))
+			_play_vfx(_player_hp, mv.vfx)
 			var before := _active.hp
 			_active.hp = mini(_active.hp + mv.power, _active.max_hp)
 			_update_hud()
@@ -240,7 +258,8 @@ func _resolve_move(mv) -> void:
 			await _say("%s mends %d HP." % [_active.display_name, healed])
 			await _end_player_turn()
 		"buff":
-			_sfx("move_buff")
+			_sfx(_move_sfx(mv))
+			_play_vfx(_player_hp, mv.vfx)
 			_active.atk_bonus += mv.power
 			_update_hud()
 			await _say("%s uses %s — attack rose!" % [_active.display_name, mv.display_name])
@@ -306,7 +325,8 @@ func _apply_secondary_effects(mv, attacker: Combatant, target: Combatant, dmg: i
 
 
 func _player_attack(mv) -> void:
-	_sfx("move_" + mv.kind)
+	_sfx(_move_sfx(mv))
+	_play_vfx(_enemy_sprite, mv.vfx)   # effect lands on the target
 	# Fold a one-shot counter bonus (from a prior guard/evade) into this attack, then consume it.
 	var counter: int = _active.counter_bonus
 	_active.counter_bonus = 0
@@ -355,6 +375,9 @@ func _enemy_turn() -> void:
 	var result := _resolve_hit(_enemy, _active, power)
 	var dmg: int = result["dmg"]
 	_sfx("enemy_hit")
+	if mv != null:
+		_play_vfx(_player_hp, mv.vfx)   # the enemy's move effect lands on the player
+
 	if result["evaded"]:
 		_update_hud()
 		await _say("%s attacks — %s evades!" % [_enemy.display_name, _active.display_name])
@@ -562,3 +585,31 @@ func _sfx(id: String) -> void:
 func _music(id: String) -> void:
 	if _sound != null:
 		_sound.play_music(id)
+
+
+## The sound id for a move: its own `sfx` if set, else the per-kind default. So audio is unchanged
+## for moves that don't override it, and a move can name a shared/custom sound. A non-empty id that
+## has no file is simply silent (SoundManager no-ops a missing id).
+func _move_sfx(mv) -> String:
+	return mv.sfx if not String(mv.sfx).is_empty() else "move_" + mv.kind
+
+
+## Play a move's optional visual effect (`mv.vfx`, a VfxLibrary PackedScene id) centered on `anchor`
+## (the struck/casting Control). No-op when the id is blank or no scene exists — the move still gets
+## its flash/shake/popup feedback. The effect scene self-frees (vfx_oneshot.gd); we also safety-free
+## after VFX_MAX_TIME so a hand-authored scene that forgets can't leak.
+func _play_vfx(anchor: CanvasItem, id: String) -> void:
+	if _vfx_holder == null or id.is_empty():
+		return
+	var scene: PackedScene = VFX_LIBRARY.for_id(id)
+	if scene == null:
+		return
+	var fx := scene.instantiate()
+	_vfx_holder.add_child(fx)
+	if fx is Node2D and anchor is Control:
+		fx.global_position = anchor.global_position + anchor.size / 2.0
+	var tree := get_tree()
+	if tree != null:
+		await tree.create_timer(VFX_MAX_TIME).timeout
+	if is_instance_valid(fx):
+		fx.queue_free()

@@ -9,23 +9,28 @@ extends SceneTree
 
 const OUT_DIR := "res://assets/data/moves/"
 
-# id, name, kind, power, description
+# id, name, kind, power, description, sfx, vfx
 # kinds: attack (deal dmg) · guard (halve next hit) · evade (next hit deals 0 dmg) ·
 #        reflect (next hit is redirected to its attacker) · heal (restore power HP) ·
 #        drain (deal dmg, heal user half the damage) · buff (raise user's attack by power) ·
 #        stun (deal dmg, target skips its next turn) · reckless (heavy dmg, user takes recoil)
+#
+# sfx / vfx are OPTIONAL effect ids (see MoveData / battle.gd):
+#   sfx — assets/audio/sfx/<sfx>.*; blank falls back to the per-kind "move_<kind>" sound.
+#   vfx — assets/vfx/<vfx>.tscn (built by tools/gen_vfx.gd); blank = no extra effect.
+# Moves SHARE an effect by naming the same id (e.g. strike & heavy both use "slash").
 const MOVES := [
-	{"id": "strike",  "name": "Strike",         "kind": "attack",   "power": 0,  "desc": "A reliable hit."},
-	{"id": "heavy",   "name": "Heavy Blow",      "kind": "attack",   "power": 5,  "desc": "A powerful strike."},
-	{"id": "slam",    "name": "Slam",            "kind": "attack",   "power": 9,  "desc": "A crushing blow."},
-	{"id": "guard",   "name": "Guard",           "kind": "guard",    "power": 0,  "desc": "Brace — halve the next hit."},
-	{"id": "evade",   "name": "Evade",           "kind": "evade",    "power": 0,  "desc": "Slip away — the next hit misses entirely."},
-	{"id": "reflect", "name": "Reflect",         "kind": "reflect",  "power": 0,  "desc": "Brace and reflect the next hit back at its attacker."},
-	{"id": "mend",    "name": "Mend",            "kind": "heal",     "power": 8,  "desc": "Recover some HP."},
-	{"id": "drain",   "name": "Drain",           "kind": "drain",    "power": 1,  "desc": "Bite and siphon — heal for half the damage."},
-	{"id": "focus",   "name": "Focus",           "kind": "buff",     "power": 3,  "desc": "Steel yourself — raise attack for the fight."},
-	{"id": "shock",   "name": "Shock",           "kind": "stun",     "power": 4,  "desc": "A jolting strike — the target reels and can't act next turn."},
-	{"id": "reckless_swing", "name": "Reckless Swing", "kind": "reckless", "power": 14, "desc": "A wild, all-out swing that hurts the user too."},
+	{"id": "strike",  "name": "Strike",         "kind": "attack",   "power": 0,  "desc": "A reliable hit.",                                          "sfx": "", "vfx": "slash"},
+	{"id": "heavy",   "name": "Heavy Blow",      "kind": "attack",   "power": 5,  "desc": "A powerful strike.",                                       "sfx": "", "vfx": "slash"},
+	{"id": "slam",    "name": "Slam",            "kind": "attack",   "power": 9,  "desc": "A crushing blow.",                                         "sfx": "", "vfx": "impact"},
+	{"id": "guard",   "name": "Guard",           "kind": "guard",    "power": 0,  "desc": "Brace — halve the next hit.",                              "sfx": "", "vfx": ""},
+	{"id": "evade",   "name": "Evade",           "kind": "evade",    "power": 0,  "desc": "Slip away — the next hit misses entirely.",                "sfx": "", "vfx": ""},
+	{"id": "reflect", "name": "Reflect",         "kind": "reflect",  "power": 0,  "desc": "Brace and reflect the next hit back at its attacker.",     "sfx": "", "vfx": ""},
+	{"id": "mend",    "name": "Mend",            "kind": "heal",     "power": 8,  "desc": "Recover some HP.",                                         "sfx": "", "vfx": "heal_sparkle"},
+	{"id": "drain",   "name": "Drain",           "kind": "drain",    "power": 1,  "desc": "Bite and siphon — heal for half the damage.",             "sfx": "", "vfx": "drain_wisp"},
+	{"id": "focus",   "name": "Focus",           "kind": "buff",     "power": 3,  "desc": "Steel yourself — raise attack for the fight.",             "sfx": "", "vfx": "buff_glow"},
+	{"id": "shock",   "name": "Shock",           "kind": "stun",     "power": 4,  "desc": "A jolting strike — the target reels and can't act next turn.", "sfx": "", "vfx": "impact"},
+	{"id": "reckless_swing", "name": "Reckless Swing", "kind": "reckless", "power": 14, "desc": "A wild, all-out swing that hurts the user too.",       "sfx": "", "vfx": "impact"},
 ]
 
 
@@ -39,6 +44,8 @@ func _init() -> void:
 		mv.kind = row.kind
 		mv.power = row.power
 		mv.description = row.desc
+		mv.sfx = row.get("sfx", "")
+		mv.vfx = row.get("vfx", "")
 		var path := OUT_DIR + str(row.id) + ".tres"
 		var err := ResourceSaver.save(mv, path)
 		assert(err == OK, "failed to save " + path)

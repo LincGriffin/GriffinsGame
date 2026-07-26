@@ -7,3 +7,4 @@ script = ExtResource("1_frth3")
 id = "strike"
 display_name = "Strike"
 description = "A reliable hit."
+vfx = "slash"

@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/vfx_oneshot.gd" id="1_80bb2"]
+
+[node name="heal_sparkle" type="Node2D" unique_id=1155602796]
+script = ExtResource("1_80bb2")
+life = 0.8
+
+[node name="Particles" type="CPUParticles2D" parent="." unique_id=648241263]
+emitting = false
+amount = 20
+lifetime = 0.6
+one_shot = true
+explosiveness = 1.0
+direction = Vector2(0, -1)
+spread = 40.0
+gravity = Vector2(0, -40)
+initial_velocity_min = 60.0
+initial_velocity_max = 140.0
+scale_amount_min = 3.0
+scale_amount_max = 5.0
+color = Color(0.42, 0.95, 0.52, 1)

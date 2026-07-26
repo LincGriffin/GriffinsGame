@@ -18,7 +18,7 @@ const OUT_DIR := "res://screenshots/"
 const SIZE := Vector2i(1152, 648)
 const SETTLE_FRAMES := 30   # let _ready, layout and intro tweens settle before capturing
 
-const SHOTS := ["title", "starter_select", "dungeon", "battle", "powerup_select", "merge_select"]
+const SHOTS := ["title", "starter_select", "dungeon", "battle", "powerup_select", "merge_select", "vfx"]
 
 const MONSTERS := "res://assets/data/monsters/"
 
@@ -54,7 +54,9 @@ func _shoot(name: String) -> void:
 	if nodes.is_empty():
 		print("  %-16s skipped (not on this branch)" % name)
 		return
-	for i in SETTLE_FRAMES:
+	# Move effects are transient one-shot particle bursts that self-free — capture mid-burst.
+	var settle := 6 if name == "vfx" else SETTLE_FRAMES
+	for i in settle:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var img: Image = root.get_texture().get_image()
@@ -107,7 +109,34 @@ func _build(name: String) -> Array:
 			var sel3 = load("res://scripts/merge_select.gd").new()
 			sel3.setup(rs3.living(), _m("goblin"))
 			return [rs3, _add(sel3)]
+		"vfx":
+			return _build_vfx()
 	return []
+
+
+## Lays out the shipped move effects mid-burst on a dark backdrop, each labelled, so the
+## CPUParticles2D effects can be eyeballed (they render fine under GL Compatibility).
+func _build_vfx() -> Array:
+	if not ResourceLoader.exists("res://scripts/data/vfx_library.gd"):
+		return []
+	var vfx := load("res://scripts/data/vfx_library.gd")
+	var bg := ColorRect.new()
+	bg.color = Color(0.06, 0.06, 0.09)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var out: Array = [_add(bg)]
+	var ids := ["slash", "impact", "heal_sparkle", "buff_glow", "drain_wisp"]
+	for i in ids.size():
+		var scene: PackedScene = vfx.for_id(ids[i])
+		if scene == null:
+			continue
+		var fx = scene.instantiate()
+		fx.position = Vector2(180 + (i % 3) * 400, 200 + (i / 3) * 260)
+		out.append(_add(fx))
+		var lbl := Label.new()
+		lbl.text = ids[i]
+		lbl.position = fx.position - Vector2(40, 90)
+		out.append(_add(lbl))
+	return out
 
 
 ## The walkable dungeon with a real generated map (plus the roster HUD when the branch has one).
