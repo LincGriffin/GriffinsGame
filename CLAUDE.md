@@ -441,6 +441,33 @@ reinventing it.
   always-attack (wasted turns on situational moves add up) — expected, not a bug. Edit
   `STARTER_ID`/`RUNS`/`RANDOM_MOVES` at the top and run it.
 
+### Persistence (Phase 19)
+
+**One `SaveManager` façade** (`scripts/data/save_manager.gd`, static) is the single persistence
+entry point, delegating to three **pure-GDScript** stores. **Deliberately not SQLite** — Godot 4.7
+has no built-in SQLite, and a GDExtension binary would break the headless `doctor`/`run_tests`/hook
+pipeline; if SQL analytics are ever wanted, swap the delegates here without touching call sites.
+Each store is static with an optional `path` arg (scratch dirs in tests), same shape as `RunHistory`.
+- **`scripts/data/game_config.gd`** (`GameConfig`) — a `ConfigFile` wrapper over `user://config.cfg`
+  (namespaced sections; `[audio]` bus volumes today). **Audio settings now persist across launches**:
+  `settings_menu.gd::_set_bus_volume` saves on change, and `sound_manager.gd::_apply_saved_volumes()`
+  restores them at boot (after `_ensure_bus`). Missing file/key → the caller's default, so a fresh
+  install behaves exactly as before.
+- **`scripts/data/run_history.gd`** (`RunHistory`) — unchanged JSON impl (below); real playthroughs
+  now record via `SaveManager.record_run(...)` from `run.gd::_win`/`_game_over` (was `RunHistory`
+  directly). `RunHarness` still writes `SIMULATED_PATH` directly, keeping sim noise off the façade.
+- **Save/resume — SCAFFOLD only (data layer built + tested; NOT wired into gameplay yet).**
+  `scripts/data/save_game.gd` (`SaveGame`, a typed Resource) is the schema; `scripts/data/save_slot.gd`
+  (`SaveSlot`) round-trips it to `user://savegame.tres` via `ResourceSaver`/`ResourceLoader`;
+  `RunState.serialize_party()` / `restore_party()` convert the party to/from plain Dictionaries. The
+  tricky bit that's done+tested now: a **fused** monster (`MonsterMerge`) has a run-time `MonsterData`
+  with **no file on disk**, so the save stores full stats/name/tint/move-ids and `restore_party`
+  rebuilds a synthetic `MonsterData` when `source_id` doesn't resolve (else loads the `.tres` and
+  overlays saved live stats). **Deferred to Phase 20** (`feat/save-resume-wiring`): run.gd capturing a
+  live run (map + cleared rooms + player cell) into a `SaveGame` on node resolution, and a
+  title-screen "Resume". `party` dicts hold a `Color` tint → they go in the Resource save (`.tres`),
+  not the JSON history (JSON has no Color).
+
 ### Run tracking
 
 **`scripts/data/run_history.gd`** (`RunHistory`) persists a summary of every finished run — one

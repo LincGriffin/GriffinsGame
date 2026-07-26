@@ -9,6 +9,7 @@ signal closed
 
 const BUSES := ["SFX", "Music"]
 const BUTTON_POLISH := preload("res://scripts/button_polish.gd")
+const SAVE_MANAGER := preload("res://scripts/data/save_manager.gd")
 
 
 func _ready() -> void:
@@ -85,6 +86,7 @@ func _set_bus_volume(bus: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus)
 	if idx != -1:
 		AudioServer.set_bus_volume_db(idx, linear_to_db(linear))
+	SAVE_MANAGER.set_bus_volume(bus, linear)   # persist so it survives a restart (user://config.cfg)
 
 
 func _on_dim_input(event: InputEvent) -> void:
