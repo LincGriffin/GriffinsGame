@@ -17,6 +17,7 @@ const DUNGEON_VIEW := preload("res://scripts/map/dungeon_view.gd")
 const ROSTER_HUD := preload("res://scripts/roster_hud.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 const RUN_HISTORY := preload("res://scripts/data/run_history.gd")
+const SCREEN_TRANSITION := preload("res://scripts/screen_transition.gd")
 
 # The wild pool spans difficulty tiers 0..3; the run draws depth-appropriate monsters
 # (see _pick_wild). Starters are the three tier-0 monsters.
@@ -76,7 +77,7 @@ var _active_battle: Battle = null
 var _busy := false                  # a node is resolving (battle up, etc.)
 var _ended := false                 # run won/lost; awaiting restart
 var _settings_open := false         # the Settings overlay is up (Escape toggles it)
-var _fade_layer: CanvasLayer = null # the in-progress fade-to-black overlay, if any
+var _transition: ScreenTransition = null   # plays the fade/screen transitions (see screen_transition.gd)
 var _wild_by_tier: Dictionary = {}  # tier:int -> Array[MonsterData]
 var _max_tier := 0
 
@@ -93,6 +94,7 @@ var _recruited: Array[String] = []   # monster ids recruited this run, in order
 func _ready() -> void:
 	_rng.randomize()
 	_build_wild_index()
+	_transition = SCREEN_TRANSITION.new(self)
 	_gs = get_node_or_null("/root/RunState")
 	if _gs == null:
 		return   # headless / test context: no live run
@@ -191,24 +193,30 @@ func _enter_room(id: int) -> void:
 	var node: Dictionary = _map["nodes"][id]
 	match node["type"]:
 		"battle", "elite", "boss":
-			_do_battle(id, node["enemy"])
+			await _do_battle(id, node["enemy"])
 		"heal":
 			_sfx("node_heal")
+			await _transition.cover(ScreenTransition.Kind.HEAL)
 			_heal_party()
-			_toast("Party fully healed!")
 			_advance(id)
+			await _transition.reveal(ScreenTransition.Kind.HEAL)
+			_toast("Party fully healed!")
 		"powerup":
 			_sfx("node_powerup")
-			_open_powerup_chooser(id)   # the chooser overlay is its own on-screen feedback
+			await _open_powerup_chooser(id)   # the chooser overlay is its own on-screen feedback
 		"teleport":
 			_sfx("node_teleport")
+			await _transition.cover(ScreenTransition.Kind.TELEPORT)
+			_teleport(id)                     # relocates the player — the cover hides the camera jump
+			await _transition.reveal(ScreenTransition.Kind.TELEPORT)
 			_toast("Teleport!")
-			_teleport(id)
 		"room":
 			_sfx("node_room")
+			await _transition.cover(ScreenTransition.Kind.TREASURE)
 			_grant_treasure()
-			_toast("Treasure!  +%d max HP" % ROOM_BONUS_HP)
 			_advance(id)
+			await _transition.reveal(ScreenTransition.Kind.TREASURE)
+			_toast("Treasure!  +%d max HP" % ROOM_BONUS_HP)
 		_:
 			_advance(id)
 
@@ -246,14 +254,19 @@ func _do_battle(id: int, enemy: MonsterData) -> void:
 		return
 	_battles_fought += 1
 	_view.set_walking(false)
+	await _transition.cover(ScreenTransition.Kind.BATTLE)
 	var battle := BATTLE_SCENE.instantiate()
 	battle.setup(enemy)
 	battle.finished.connect(_on_battle_finished.bind(id))
 	add_child(battle)
 	_active_battle = battle
+	await _transition.reveal(ScreenTransition.Kind.BATTLE)
 
 
 func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
+	# Cover the screen, then swap the battle out for whatever comes next (dungeon / merge overlay /
+	# win-lose screen) behind it, then reveal — so the battle→next-screen change isn't a hard cut.
+	await _transition.cover(ScreenTransition.Kind.BATTLE)
 	if _active_battle != null:
 		_active_battle.queue_free()
 		_active_battle = null
@@ -279,6 +292,7 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 			# Stay put in the (uncleared) room; step out and back to re-engage.
 			_busy = false
 			_view.set_walking(true)
+	await _transition.reveal(ScreenTransition.Kind.BATTLE)
 
 
 ## Party-full recruit: pop the merge overlay. On Merge, fuse the two picks (freeing a slot) and
@@ -395,13 +409,18 @@ func _open_powerup_chooser(id: int) -> void:
 		_advance(id)
 		return
 	_view.set_walking(false)
+	await _transition.cover(ScreenTransition.Kind.POWERUP)
 	var sel: PowerupSelect = POWERUP_SELECT.new()
 	sel.setup(_build_upgrade_options(), _gs.living())
 	sel.chosen.connect(func(up, monster):
+		# Cover, close the chooser and clear the room behind it, then reveal the dungeon.
+		await _transition.cover(ScreenTransition.Kind.POWERUP)
 		_grant_upgrade(monster, up)
 		sel.queue_free()
-		_advance(id))
+		_advance(id)
+		await _transition.reveal(ScreenTransition.Kind.POWERUP))
 	add_child(sel)
+	await _transition.reveal(ScreenTransition.Kind.POWERUP)
 
 
 ## Build the (up to) 3 upgrade choices offered by the chooser, drawn from the DATA-DRIVEN power-up
@@ -621,34 +640,15 @@ func _music(id: String) -> void:
 		_sound.play_music(id)
 
 
-const FADE_TIME := 0.25
-
-## Cover the screen in black. Await this before swapping content so the swap is hidden.
+## Cover the screen in black. Await before swapping content so the swap is hidden. Thin wrappers
+## over the shared ScreenTransition (see screen_transition.gd) — the title flow uses the plain FADE.
 func _fade_out() -> void:
-	var layer := CanvasLayer.new()
-	layer.layer = 60   # above every other overlay (Settings 45, DebugOverlay 50 included)
-	var rect := ColorRect.new()
-	rect.color = Color(0, 0, 0, 0)
-	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	rect.mouse_filter = Control.MOUSE_FILTER_STOP   # block input while covered
-	layer.add_child(rect)
-	add_child(layer)
-	_fade_layer = layer
-	var tw := create_tween()
-	tw.tween_property(rect, "color:a", 1.0, FADE_TIME)
-	await tw.finished
+	await _transition.cover(ScreenTransition.Kind.FADE)
 
 
 ## Reveal whatever was swapped in underneath, then drop the fade overlay.
 func _fade_in() -> void:
-	if _fade_layer == null:
-		return
-	var rect: ColorRect = _fade_layer.get_child(0)
-	var tw := create_tween()
-	tw.tween_property(rect, "color:a", 0.0, FADE_TIME)
-	await tw.finished
-	_fade_layer.queue_free()
-	_fade_layer = null
+	await _transition.reveal(ScreenTransition.Kind.FADE)
 
 
 ## Escape opens Settings from any screen (title, starter select, dungeon, battle). Guarded so a

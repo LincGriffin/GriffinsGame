@@ -234,6 +234,27 @@ skeleton with placeholder fights first — flagged.)*
 | **14** ✅ | `feat/battle-test-harness` | **Test/simulation harness** — `BattleHarness` drives a real `battle.tscn` end-to-end (no UI clicks, no real-time waits) for scene-level tests (`test_battle_scene.gd`) and a Monte Carlo battle simulator (`simulate_battle.gd`). `RunHarness` extends this to a **full simulated run** — starter pick through every node to the boss, reusing `run.gd`'s own resolution logic — via `simulate_run.gd`. **Run tracking**: `RunHistory` persists a JSON summary of every run (real playthroughs *and* simulated ones, kept in separate logs) — `died_to`, `recruited`, final roster, etc. — readable via `report_run_history.gd`. Dev-facing for now; same shape could back an in-game history screen later. | 1, 13 |
 | **15** ✅ | `feat/battle-moves` | **Four new move kinds** — `evade` (next hit deals 0 dmg), `reflect` (next hit redirected to its attacker), `stun` (an attack that also skips the target's next turn), `reckless` (heavy attack, self-damages the user). New moves Evade/Reflect/Shock/Reckless Swing, assigned to a spread of roster monsters (Bat, Skeleton, Spider, Golem, Wraith, the two elites, and the Hydra). | 3, 14 |
 | **16** ✅ | `feat/combat-progression-tweaks` | **Combat & progression tweaks** — the `speed` stat is hidden and ignored; the player's active monster **always acts first**. **Drain lifesteal** cut from ½ → **3/8** of damage (−25%). **Power-up rooms** now open a **3-choice upgrade chooser** (a mix of +Max HP / +Attack / +Defense stat buffs and a learnable move) that the player **assigns to a party monster**, with placeholder icon tiles (`gen_upgrade_icons.gd` → `assets/upgrade_icons/`). | 3, 15 |
+| **17** ✅ | `feat/screen-transitions` | **Screen transitions** — a reusable `ScreenTransition` (`scripts/screen_transition.gd`) plays a cover→swap→reveal around every node screen change (dungeon ⇄ battle / power-up / heal / treasure / teleport), and the title fade now routes through it too. A **simple fade-to-black** is the baseline; the `Kind` argument is the seam for **varied per-type transitions later** (see below). Cosmetic only. | 7, 12 |
+
+### Screen transitions (Phase 17)
+
+`ScreenTransition` (`scripts/screen_transition.gd`, a `RefCounted` constructed with a host node)
+plays a **two-phase** transition: `await cover(kind)` raises a top-most, input-blocking black
+`ColorRect` (on a `CanvasLayer` above every other overlay), the caller swaps whatever is underneath
+(open the battle overlay, the power-up chooser, heal the party, warp the player…), then
+`await reveal(kind)` fades it away and frees it. `run.gd` calls this around each node resolution in
+`_enter_room` / `_do_battle` / `_on_battle_finished` / `_open_powerup_chooser`, and the title→game
+fade (`_fade_out`/`_fade_in`) now delegates to it as well, so there's **one** transition
+implementation.
+
+**Today every `Kind` (FADE / BATTLE / POWERUP / HEAL / TREASURE / TELEPORT) resolves to the same
+fade** — the point of the enum is that the call sites already pass a *distinct* kind per situation.
+To make transitions **dynamic and varied later**, implement a per-style cover/reveal pair and route
+the `Kind` to it inside `screen_transition.gd` — call sites never change. Candidate styles: an
+**iris** wipe (animate a circular mask), a diagonal **swipe** (slide a shaped rect/polygon), a
+**shatter** or **pixelate** (a `ShaderMaterial` on the cover rect driven by a tweened uniform), or a
+themed **flash** per node type (green heal, gold treasure, red battle). The only contract a style
+must honor: end fully opaque on cover, fully clear on reveal.
 
 ## Content tooling
 
