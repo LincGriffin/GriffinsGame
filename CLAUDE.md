@@ -298,9 +298,9 @@ one doc written for someone playing rather than building the game.
   Each picker filters its depth-appropriate pool to unused monsters, **widens** to the whole wild
   pool if that tier is spent, and only **repeats as a last resort** once the roster is genuinely
   exhausted (never leaves a node without an enemy). **Roster headroom matters:** a generated map has
-  roughly **10–13 battle nodes** and `WILD_ENEMIES` now holds **13** (four tier-1 monsters — Kobold
-  Scrapper / Myconid / Marsh Wisp / Ember Imp — added to close most of the repeat tail); adding more
-  low-tier monsters raises the ceiling further (keeps map size the same). Note the widen-on-exhaustion
+  roughly **10–13 battle nodes** and `WILD_ENEMIES` now holds **14** (four tier-1 monsters — Kobold
+  Scrapper / Myconid / Marsh Wisp / Ember Imp — plus the tier-2 **Cyclops**, added to close most of
+  the repeat tail); adding more low-tier monsters raises the ceiling further (keeps map size the same). Note the widen-on-exhaustion
   step reaches the **whole** pool, so an exhausted early tier can still surface a tier-3 monster at a
   low row — the deeper fix is to widen to *adjacent* tiers only. `test_unique_encounters.gd` pins both
   the uniqueness and the exhaustion fallback.
@@ -455,7 +455,12 @@ reinventing it.
   how far losses reach, and the biggest killers. `RunHarness.play()` gained a `strategy` param and a
   200-turn **stalemate = loss** guard (so a defensive monster out-sustaining an enemy can't count as
   a win). Win rates are a floor (unskilled AI), but the *relative* strategy gaps and the death
-  causes are the signal.
+  causes are the signal. An **`ALWAYS_MERGE`** const (→ `RunHarness.play()`'s `always_merge` param)
+  makes each win fuse the capture into the weakest **never-fused** party member when one exists (the
+  in-game post-capture merge offer, always taken; `_merge_partner()`) — a smaller party of stronger
+  fused monsters. Measured big: with cooldowns in effect, always-merging lifted the overall win rate
+  from **~2% → ~12%** (burst ~10% → ~40%) — merging is a strong strategy the naive AIs still benefit
+  from.
 - **`tools/simulate_run.gd`** — a standalone tool (same `RunHarness`) that plays whole runs and
   prints a play-by-play log plus win/loss. **Its default AI always attacks** — never guards,
   heals, or switches proactively (only when forced by a faint) — so any win rate it reports is a

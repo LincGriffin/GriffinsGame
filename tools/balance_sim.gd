@@ -12,6 +12,9 @@ const MONSTERS := "res://assets/data/monsters/"
 
 const STARTERS := ["chicken", "slime", "bat"]
 const RUNS_PER := 10   # per strategy → 5 strategies × 10 = 50 runs
+## When true, every won fight fuses the capture into a never-fused party member when one exists
+## (the in-game post-capture merge offer, always taken) — a smaller party of stronger fused monsters.
+const ALWAYS_MERGE := true
 
 
 func _init() -> void:
@@ -31,7 +34,7 @@ func _run() -> void:
 		for i in RUNS_PER:
 			var starter_id: String = STARTERS[i % STARTERS.size()]
 			var r = RUN_HARNESS.new(self)
-			await r.play(load(MONSTERS + starter_id + ".tres"), false, false, strat)
+			await r.play(load(MONSTERS + starter_id + ".tres"), false, false, strat, ALWAYS_MERGE)
 			var a: Dictionary = per[strat]
 			a.total += 1
 			a.battles += r.battles_fought
@@ -61,6 +64,7 @@ func _run() -> void:
 func _report(strategies: Array, per: Dictionary, starters: Dictionary, deaths: Dictionary,
 		total: int, total_wins: int) -> void:
 	print("\n================ BALANCE REPORT (%d runs) ================" % total)
+	print("Merge mode: %s" % ("ALWAYS merge captures when possible" if ALWAYS_MERGE else "never merge (recruit as-is)"))
 	print("Overall win rate: %d/%d (%.1f%%)\n" % [total_wins, total, 100.0 * total_wins / total])
 
 	print("By strategy:")

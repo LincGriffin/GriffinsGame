@@ -25,7 +25,7 @@ so the game always runs. You can add them one at a time.
 That's it — no generator to re-run and no data to edit. `scripts/data/portraits.gd` looks
 each file up by id at runtime.
 
-## The roster (16)
+## The roster (17)
 
 | `id` (filename) | Monster | Role | Art |
 |---|---|---|---|
@@ -40,6 +40,7 @@ each file up by id at runtime.
 | `imp.png` | Ember Imp | wild (tier 1) | **placeholder** |
 | `goblin.png` | Goblin | wild (tier 2) | painted |
 | `spider.png` | Giant Spider | wild (tier 2) | painted |
+| `cyclops.png` | Cyclops | wild (tier 2) | **placeholder** |
 | `golem.png` | Stone Golem | wild (tier 3) | painted |
 | `wraith.png` | Wraith | wild (tier 3) | painted |
 | `gremlin_knob.png` | Gremlin Knob | **elite** | painted |
@@ -49,7 +50,7 @@ each file up by id at runtime.
 The three starters (`chicken`, `slime`, `bat`) are the highest-value ones to do first — they
 are the only portraits shown on the starter-select screen.
 
-**Placeholders:** `kobold` / `myconid` / `wisp` / `imp` currently use **stylized procedural
+**Placeholders:** `kobold` / `myconid` / `wisp` / `imp` / `cyclops` currently use **stylized procedural
 placeholders** (a framed creature drawn by `tools/gen_placeholder_monster_art.gd`) — recognizable
 but *not* the painted style. Drop a real 256×256 painted PNG over any of them to replace it (then
 `--import`); no code or data changes needed.

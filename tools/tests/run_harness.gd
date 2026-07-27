@@ -41,6 +41,7 @@ var _root: Node
 var _run_ctrl   # detached Run instance — reused so node resolution never drifts from run.gd
 var _random_moves := false   # see play()'s random_moves param
 var _strategy := "aggressive"   # move-selection AI; see _pick_move() / STRATEGIES
+var _always_merge := false   # when a win could merge the capture into a party member, do so
 
 ## The move-selection strategies balance-sim can play (a *different* non-strategic-to-strategic
 ## spread, all still simple heuristics — no lookahead). See _pick_move().
@@ -67,9 +68,10 @@ func _init(tree: SceneTree) -> void:
 ## evade/reflect/stun/reckless included, not just attack/drain) instead of the default
 ## always-prefer-offense heuristic; see _pick_move().
 func play(starter: MonsterData, record_history := true, random_moves := false,
-		strategy := "") -> void:
+		strategy := "", always_merge := false) -> void:
 	_random_moves = random_moves
 	_strategy = strategy if strategy != "" else ("random" if random_moves else "aggressive")
+	_always_merge = always_merge
 	var starter_id := String(starter.id)
 	run_state.new_run(starter)
 	log.append("Starter: %s (HP %d, ATK %d)" % [
@@ -189,8 +191,15 @@ func _fight(node: Dictionary) -> void:
 				enemy.display_name, turns,
 				("  (%d party member(s) fainted this fight)" % fainted) if fainted > 0 else ""])
 			if not enemy.is_boss:
-				var did_recruit: bool = run_state.add_monster(enemy)
-				if did_recruit:
+				var partner = _merge_partner()
+				if _always_merge and partner != null:
+					# Fuse the capture into a never-fused member (the post-capture merge offer,
+					# always taken). Party size is unchanged; the fused monster is stronger.
+					var fused = run_state.merge_incoming(partner, enemy)
+					recruited.append(String(enemy.id))
+					log.append("  Merged %s into %s → %s! (party now %d: %s)" % [enemy.display_name,
+						partner.display_name, fused.display_name, run_state.party.size(), _roster_summary()])
+				elif run_state.add_monster(enemy):
 					recruited.append(String(enemy.id))
 					log.append("  Recruited %s! (party now %d: %s)" % [enemy.display_name,
 						run_state.party.size(), _roster_summary()])
@@ -213,6 +222,20 @@ func _roster_summary() -> String:
 	for c in run_state.party:
 		parts.append("%s %d/%d" % [c.display_name, c.hp, c.max_hp])
 	return ", ".join(parts)
+
+
+## The never-fused party member to fuse a new capture into — the WEAKEST one (so a merge upgrades
+## the weakest slot the most), or null if the party has no fusible member. Mirrors the in-game
+## post-capture merge offer, which only lets you fuse with a never-fused monster.
+func _merge_partner():
+	var unfused: Array = run_state.unfused_living()
+	if unfused.is_empty():
+		return null
+	var weakest = unfused[0]
+	for c in unfused:
+		if c.max_hp + c.attack < weakest.max_hp + weakest.attack:
+			weakest = c
+	return weakest
 
 
 ## Pick the active monster's move for this turn per `_strategy`. All heuristics, no lookahead:
