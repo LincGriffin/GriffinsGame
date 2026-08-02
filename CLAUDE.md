@@ -183,7 +183,10 @@ one doc written for someone playing rather than building the game.
 - **Party roster HUD** (`scripts/roster_hud.gd`, `RosterHud`): a strip along the **bottom of the
   dungeon screen** — one card per party monster, portrait (flat `tint` fallback) with **HP under
   it**, coloured green/yellow/red by remaining fraction. On `layer = 15`, so it's above the world but
-  **below** the battle overlay and menus (30). `run.gd` creates it in `_begin_run()` and passes its
+  **below** the battle overlay and menus (30). It's also **explicitly hidden during a battle**
+  (`run.gd` toggles `_roster_hud.visible` off in `_do_battle`, back on in `_on_battle_finished`) —
+  the battle panel doesn't cover the very bottom strip, so the cards would otherwise poke out over
+  the move buttons, and the battle already shows the active monster's HP. `run.gd` creates it in `_begin_run()` and passes its
   own `_gs` via `setup(gs)` — **explicit injection, not a `/root/RunState` lookup**, because a global
   lookup can bind to another test suite's leftover instance (that exact bug cost 4 red tests here).
   Refresh: `party_changed` covers recruit/merge/permadeath, and `_process` also compares a cheap
