@@ -256,6 +256,10 @@ func _do_battle(id: int, enemy: MonsterData) -> void:
 	_battles_fought += 1
 	_view.set_walking(false)
 	await _transition.cover(ScreenTransition.Kind.BATTLE)
+	# Hide the dungeon's bottom roster strip while fighting — the battle shows the active monster's
+	# HP itself, and the strip would otherwise poke out past the battle panel over the move buttons.
+	if _roster_hud != null:
+		_roster_hud.visible = false
 	var battle := BATTLE_SCENE.instantiate()
 	battle.setup(enemy)
 	battle.finished.connect(_on_battle_finished.bind(id))
@@ -271,6 +275,8 @@ func _on_battle_finished(result: int, enemy: MonsterData, id: int) -> void:
 	if _active_battle != null:
 		_active_battle.queue_free()
 		_active_battle = null
+	if _roster_hud != null:
+		_roster_hud.visible = true   # back to the dungeon — show the party strip again
 	_gs.prune_dead()
 	match result:
 		Battle.Result.PLAYER_LOST:
