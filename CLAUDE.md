@@ -142,10 +142,17 @@ one doc written for someone playing rather than building the game.
   pure/static in `scripts/monster_merge.gd` (`MonsterMerge.fuse`, unit-tested): **stats** = per-stat
   **max** of the two parents + a small bonus (`HP_MULT`/`ATK_BONUS`/`DEF_BONUS` — never the additive
   sum); **moves** = the **union** of both movesets, de-duped, capped at `MAX_MOVES`; **identity** = a
-  special parent pair (`scripts/data/fusion_table.gd`, keyed by the two ids sorted) becomes that
-  **specific monster** (portrait/name), every other pair becomes a generic **"Fused &lt;stronger
-  parent&gt;"** with a blended tint and no portrait (tint fallback). `fuse` sets `is_fused` on the
-  result.
+  special parent pair (`scripts/data/fusion_table.gd`, keyed by the two ids sorted — a pair CAN be
+  the same id twice, e.g. `griffin|griffin`) becomes that **specific monster** (portrait/name), every
+  other pair becomes a generic **"Fused &lt;stronger parent&gt;"** with a blended tint and no portrait
+  (tint fallback). **`is_fused` distinguishes the two**, not "was this ever fused": a **named identity
+  result stays unfused** (`is_fused = false`) — it's a real, whole monster, not a dead end, so it can
+  be a fusion **parent again later** (chaining recipes, e.g. `chicken+rat → goblin`, then
+  `goblin+skeleton → gremlin_knob`); only a **generic blend** sets `is_fused = true` and is excluded
+  from further fusion. The current table includes `golem+spider → griffin` and `griffin+griffin →
+  hydra` — a wild-recruited Griffin plus a golem/spider-crafted Griffin can be fused into the final-boss
+  species as a party member (harmless: nothing reads `is_boss` on a party Combatant, only on the
+  current battle's `_enemy`).
 - **Merge happens as a post-capture OFFER (Phase 21), not only at cap.** After a won wild/elite fight,
   if the party has a **never-fused** member (`Combatant.is_fused == false`; `RunState.unfused_living()`),
   `run.gd::_resolve_recruit` opens the offer overlay (`scripts/merge_select.gd`, `MergeSelect`,
@@ -165,9 +172,24 @@ one doc written for someone playing rather than building the game.
 - **Roster is tiered (Phase 5).** `MonsterData` carries a `tier` (0 = weakest … 3 = late) and an
   `is_elite` flag. Wild encounters **scale with map depth** — `run.gd` groups the wild pool by tier
   and `_pick_wild(row)` draws a depth-appropriate monster (deeper rows → tougher, with a chance to
-  drop one tier for variety). The three **tier-0** monsters (Chicken / Slime / Bat) are the fixed
-  starters. **Elites** (the Griffin and Gremlin Knob) are tougher fights that, on win, recruit the
-  elite **and** full-heal the party. The **Hydra** is the final boss.
+  drop one tier for variety). Chicken / Slime / Bat are the tier-0 monsters shipped as starters
+  today, but **the starter roster is data-driven, not hardcoded**: `run.gd::_starter_pool()` reads
+  every monster's `is_starter` flag straight from disk (`MonsterRepo.load_all()`) each time the
+  starter-select screen opens, so toggling the flag via the Monsters dock immediately adds or
+  removes that monster from the run-start choices — no code edit needed (this used to be a
+  hardcoded `STARTER_ENEMIES` const array that silently ignored the dock's flag; fixed). **Elites**
+  (the Griffin and Gremlin Knob) are tougher fights that, on win, recruit the elite **and**
+  full-heal the party. The **Hydra** is the final boss. **The wild and elite pools are ALSO
+  data-driven now** (same fix, same reason): `run.gd::_build_wild_index()` reads the whole roster
+  from `MonsterRepo.load_all()` and splits it into `_wild_enemies` (everything except elites and
+  the boss) / `_elite_enemies` (`is_elite == true`) / `_wild_by_tier` (the wild pool grouped by
+  `tier`) — toggling `tier` or `is_elite` via the dock takes effect immediately, no code edit or
+  `gen_content.gd` re-run needed. A monster flagged `is_boss` is excluded from BOTH pools (reserved
+  for `BOSS_ENEMY`, which stays a fixed const — deriving the boss dynamically would be ambiguous if
+  more than one monster ever carried that flag, which did happen once by accident during dock
+  testing). `_pick_elite` falls back to `_pick_wild` if the elite pool is ever empty (the dock lets
+  the user uncheck Elite on every monster, unlike the old hardcoded array which could never be
+  empty) rather than crashing on an empty-array random index.
 - **Difficulty tuning:** all monster HP in `gen_content.gd`'s `ROSTER` runs **+25%** over the
   original balance pass so an average fight lasts longer. The player's **chosen starter** also gets
   a one-time boost over its base stats (`RunState.STARTER_HP_MULT` ×1.4 / `STARTER_ATK_BONUS` +3 /
@@ -276,7 +298,7 @@ one doc written for someone playing rather than building the game.
   Battle/elite/boss show the battle overlay and power-up shows its chooser, so those are their own
   feedback (no toast).
 - **Elite nodes** are gated to rows ≥ `MapGenerator.ELITE_MIN_ROW` (the run eases in) with a small
-  weight; they draw from the elite pool (`ELITE_ENEMIES` in `run.gd`).
+  weight; they draw from the elite pool (`run.gd::_elite_enemies`, every `is_elite` monster on disk).
 - **Marker tiles:** the tileset atlas is floor `(0,0)`, wall `(1,0)`, then walkable node markers
   `(2,0)`..`(8,0)` (battle/boss/heal/powerup/teleport/elite/room) — generated by `gen_art.gd` in the
   `map_view.gd` palette; node identity comes from the map data (cell→id), so markers carry no extra
@@ -301,9 +323,10 @@ one doc written for someone playing rather than building the game.
   Each picker filters its depth-appropriate pool to unused monsters, **widens** to the whole wild
   pool if that tier is spent, and only **repeats as a last resort** once the roster is genuinely
   exhausted (never leaves a node without an enemy). **Roster headroom matters:** a generated map has
-  roughly **10–13 battle nodes** and `WILD_ENEMIES` now holds **14** (four tier-1 monsters — Kobold
-  Scrapper / Myconid / Marsh Wisp / Ember Imp — plus the tier-2 **Cyclops**, added to close most of
-  the repeat tail); adding more low-tier monsters raises the ceiling further (keeps map size the same). Note the widen-on-exhaustion
+  roughly **10–13 battle nodes**, and the wild pool (`run.gd::_wild_enemies` — every monster that
+  isn't `is_elite` or `is_boss`, read live from disk) needs to comfortably exceed that or repeats
+  become common; adding more low-tier monsters (or toggling more existing ones off elite/starter)
+  raises the ceiling, no code change needed anymore. Note the widen-on-exhaustion
   step reaches the **whole** pool, so an exhausted early tier can still surface a tier-3 monster at a
   low row — the deeper fix is to widen to *adjacent* tiers only. `test_unique_encounters.gd` pins both
   the uniqueness and the exhaustion fallback.
@@ -345,7 +368,23 @@ game, not part of the headless build/test pipeline. Each is a thin UI shell (bui
   `scripts/data/monster_repo.gd` (`MonsterRepo` — list/load/create/save/delete + id-format and
   uniqueness validation over `assets/data/monsters/*.tres`, every function takes an optional `dir`
   so tests point at a scratch directory). Uses `MoveRepo`'s listing to offer moves for a monster's
-  moveset.
+  moveset — the dropdown is rebuilt (`_refresh_move_options`) every time a monster is (re)loaded, not
+  just once at dock startup, so a move created via the Move dock earlier in the same editor session
+  still shows up here without reopening the Monsters dock. `MonsterRepo.load_one` also guards
+  against a Godot editor-runtime quirk: a monster saved with an empty moveset never gets a
+  `moves = [...]` line written (equals the script default, so `ResourceSaver` omits it), and
+  reloading it can hand back the script's shared **read-only** default `Array` — appending threw
+  "Array is in read-only state" for a freshly-created, still-moveless monster. `load_one` now
+  replaces a read-only `moves` with `moves.duplicate()` before returning (the dock's "Add" handler
+  does the same check as a second line of defense). `load_one` also force-reloads via
+  `ResourceLoader.load(path, "", CACHE_MODE_REPLACE)` rather than plain `load()` — otherwise
+  deleting a monster and immediately creating a new one under the **same id** could hand back
+  Godot's stale cached Resource from before the delete instead of the freshly-written file.
+  `REPO.create()` now seeds every new monster with **two default moves** (`strike` + `guard`) so
+  it isn't stuck moveless. `REPO.delete()` also removes the monster's portrait/map-sprite art (not
+  just its `.tres`) — leaving orphaned art behind was why recreating a monster under a deleted id
+  appeared to "remember" its old art; a **rename** (`save()`'s internal id-change cleanup) does
+  NOT trigger this art removal, only an explicit delete does.
 - **Move editor** — `addons/move_editor/` (dock "Moves"): add / duplicate / edit / delete battle
   moves (id, display name, **kind** picked from `MoveRepo.KINDS` so it can't drift from what
   `battle.gd` resolves, power, description) without hand-editing `tools/gen_moves.gd`. Backed by

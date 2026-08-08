@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://cmyisjcw0k4nh"]
+
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_yaspo"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_vnaqh"]
+[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="3_yaspo"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="4_q3qav"]
+
+[resource]
+script = ExtResource("4_q3qav")
+id = "knight"
+display_name = "Knight"
+max_hp = 30
+tier = 1
+moves = Array[ExtResource("1_yaspo")]([ExtResource("3_vnaqh"), ExtResource("3_yaspo")])

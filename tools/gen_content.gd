@@ -18,8 +18,10 @@ const MOVES_DIR := "res://assets/data/moves/"
 # (better reward on win). The Hydra is the final boss; the Griffin is now an elite guardian.
 # HP is +25% over the original balance pass (round-half-up) so an average fight runs longer.
 const ROSTER := [
-	# --- tier 0: starters (the fixed weakest trio, also the earliest wild pool) ---
-	{"id": "chicken",  "name": "Cluckling",    "hp": 13, "atk": 4,  "def": 1, "spd": 6,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.95, 0.85, 0.35), "moves": ["strike", "focus", "heavy"]},
+	# --- tier 0: the weakest monsters, also the earliest wild pool. Starter eligibility (below)
+	# is data-driven (run.gd::_starter_pool()) and freely toggled via the Monsters dock, so it's
+	# not necessarily all three of these anymore. ---
+	{"id": "chicken",  "name": "Chicken",      "hp": 24, "atk": 5,  "def": 1, "spd": 6,  "tier": 0, "boss": false, "elite": false, "starter": false, "tint": Color(0.95, 0.85, 0.35), "moves": ["strike", "focus", "heavy"]},
 	{"id": "slime",    "name": "Green Slime",   "hp": 20, "atk": 5,  "def": 2, "spd": 3,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.35, 0.78, 0.35), "moves": ["strike", "guard"]},
 	{"id": "bat",      "name": "Cave Bat",      "hp": 15, "atk": 6,  "def": 1, "spd": 8,  "tier": 0, "boss": false, "elite": false, "starter": true,  "tint": Color(0.59, 0.43, 0.78), "moves": ["strike", "drain", "evade"]},
 	# --- tier 1: early wild ---
@@ -38,7 +40,7 @@ const ROSTER := [
 	{"id": "wraith",   "name": "King Cat",      "hp": 40, "atk": 13, "def": 5, "spd": 8,  "tier": 3, "boss": false, "elite": false, "starter": false, "tint": Color(0.50, 0.50, 0.72), "moves": ["strike", "drain", "focus", "evade"]},
 	# --- elites: tougher, better reward (recruit + full heal) ---
 	{"id": "gremlin_knob", "name": "Gremlin Knob", "hp": 53, "atk": 14, "def": 6, "spd": 10, "tier": 3, "boss": false, "elite": true,  "starter": false, "tint": Color(0.80, 0.40, 0.50), "moves": ["strike", "heavy", "drain", "focus", "shock"]},
-	{"id": "griffin",  "name": "The Griffin",   "hp": 70, "atk": 15, "def": 7, "spd": 9,  "tier": 3, "boss": false, "elite": true,  "starter": false, "tint": Color(0.88, 0.71, 0.27), "moves": ["strike", "heavy", "slam", "guard", "reckless_swing"]},
+	{"id": "griffin",  "name": "The Griffin",   "hp": 60, "atk": 15, "def": 7, "spd": 9,  "tier": 3, "boss": false, "elite": true,  "starter": false, "tint": Color(0.88, 0.71, 0.27), "moves": ["strike", "heavy", "slam", "guard", "reckless_swing"]},
 	# --- final boss ---
 	{"id": "hydra",    "name": "The Hydra",     "hp": 98, "atk": 16, "def": 8, "spd": 6,  "tier": 4, "boss": true,  "elite": false, "starter": false, "tint": Color(0.20, 0.60, 0.55), "moves": ["strike", "heavy", "slam", "drain", "mend", "reckless_swing"]},
 ]

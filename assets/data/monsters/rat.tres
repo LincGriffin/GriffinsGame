@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://c8cketwhrhugx"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_nfrp6"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_nfrp6"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_r1dpc"]
 [ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_um5t1"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_gcbcd"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="4_gcbcd"]
 
 [resource]
 script = ExtResource("4_gcbcd")
 id = "rat"
-display_name = "Sewer Rat"
+display_name = "Japanese Armadillo"
 max_hp = 20
 attack = 7
 speed = 7

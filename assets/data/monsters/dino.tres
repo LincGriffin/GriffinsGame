@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://dpdt34e0wabw"]
+
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_mnb2l"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_k68kb"]
+[ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="3_xixm3"]
+[ext_resource type="Resource" path="res://assets/data/moves/shock.tres" id="4_k68kb"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="4_khe1l"]
+
+[resource]
+script = ExtResource("4_khe1l")
+id = "dino"
+display_name = "Dino"
+max_hp = 30
+attack = 3
+defense = 4
+tier = 1
+moves = Array[ExtResource("1_mnb2l")]([ExtResource("3_k68kb"), ExtResource("3_xixm3"), ExtResource("4_k68kb")])

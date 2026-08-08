@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://n5hp4nit6rdm"]
+
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_6d57x"]
+[ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_s2mdc"]
+[ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_32nu5"]
+[ext_resource type="Resource" path="res://assets/data/moves/shock.tres" id="4_32nu5"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="4_kpbk0"]
+[ext_resource type="Resource" path="res://assets/data/moves/mend.tres" id="5_kpbk0"]
+
+[resource]
+script = ExtResource("4_kpbk0")
+id = "nohead"
+display_name = "Nohead"
+max_hp = 80
+attack = 13
+defense = 5
+tier = 4
+moves = Array[ExtResource("1_6d57x")]([ExtResource("2_s2mdc"), ExtResource("3_32nu5"), ExtResource("4_32nu5"), ExtResource("5_kpbk0")])

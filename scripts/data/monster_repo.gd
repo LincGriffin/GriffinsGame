@@ -13,6 +13,19 @@ extends RefCounted
 const DIR := "res://assets/data/monsters/"
 const ID_REGEX_PATTERN := "^[a-z][a-z0-9_]*$"
 
+## Art conventions a monster's id is looked up under (Portraits.DIR / MapSprites.DIR) — kept as
+## plain constants here (rather than importing those classes) so delete() can clean up a deleted
+## monster's leftover art. Parametrized on delete() too, so tests can point them at scratch dirs
+## instead of ever touching the real project art.
+const PORTRAITS_DIR := "res://assets/portraits/"
+const MAP_SPRITES_DIR := "res://assets/map_sprites/"
+
+const MOVE_REPO := preload("res://scripts/data/move_repo.gd")
+## Every roster monster with any moves at all includes basic Strike; Guard is the other move
+## every tier-0 starter ships with — both exist for the life of the project, so a brand-new
+## monster starts able to actually do something in battle instead of an empty moveset.
+const DEFAULT_MOVE_IDS := ["strike", "guard"]
+
 static var _id_regex: RegEx = null
 
 
@@ -43,7 +56,18 @@ static func load_one(id: String, dir: String = DIR) -> MonsterData:
 	var path := dir + id + ".tres"
 	if not ResourceLoader.exists(path):
 		return null
-	return load(path) as MonsterData
+	# CACHE_MODE_REPLACE forces a fresh read from disk and replaces any stale cached instance —
+	# without it, deleting a monster and immediately creating a new one under the SAME id could
+	# hand back Godot's cached Resource from before the delete (same path, same in-memory object),
+	# still carrying the old stats/moves, instead of the freshly-written file's contents.
+	var m := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE) as MonsterData
+	if m != null and m.moves.is_read_only():
+		# A monster whose moveset was never explicitly saved (still empty, so `moves` was never
+		# written into the .tres) loads back holding the script's shared DEFAULT Array, which
+		# Godot marks read-only to stop one instance's edits leaking into every other instance's
+		# default. Duplicate it into a private, writable array so callers can freely append/erase.
+		m.moves = m.moves.duplicate()
+	return m
 
 
 static func id_exists(id: String, dir: String = DIR) -> bool:
@@ -75,6 +99,10 @@ static func create(id: String, display_name: String = "", dir: String = DIR) -> 
 	m.defense = 2
 	m.speed = 5
 	m.tint = Color.WHITE
+	for move_id in DEFAULT_MOVE_IDS:
+		var mv := MOVE_REPO.load_one(move_id)
+		if mv != null:
+			m.moves.append(mv)
 	var result := save(m, "", dir)
 	if not result.ok:
 		return result
@@ -94,11 +122,34 @@ static func save(m: MonsterData, previous_id: String = "", dir: String = DIR) ->
 	if err != OK:
 		return {"ok": false, "error": "save failed (engine error %d)" % err}
 	if not previous_id.is_empty() and previous_id != m.id:
-		delete(previous_id, dir)
+		# Only the stale .tres goes away on a rename — the old id's art (if any) is left alone
+		# rather than nuked by the full delete() below, since a rename isn't the user asking to
+		# discard that monster's art, just to relabel it.
+		_delete_tres_only(previous_id, dir)
 	return {"ok": true}
 
 
-static func delete(id: String, dir: String = DIR) -> bool:
+## Deletes the monster's .tres AND any art saved under its id (portrait / map sprite) — leaving
+## those behind was the cause of a deleted-then-recreated monster appearing to "remember" its old
+## art: the new monster reuses the same id, and the convention lookup (Portraits/MapSprites) just
+## finds the orphaned file still sitting there. `portraits_dir`/`map_sprites_dir` default to the
+## real art conventions but are overridable so tests never touch real project art.
+static func delete(id: String, dir: String = DIR, portraits_dir: String = PORTRAITS_DIR,
+		map_sprites_dir: String = MAP_SPRITES_DIR) -> bool:
 	if not id_exists(id, dir):
 		return false
+	var ok := _delete_tres_only(id, dir)
+	if ok:
+		_delete_if_exists(portraits_dir + id + ".png")
+		_delete_if_exists(map_sprites_dir + id + ".png")
+	return ok
+
+
+static func _delete_tres_only(id: String, dir: String) -> bool:
 	return DirAccess.remove_absolute(ProjectSettings.globalize_path(dir + id + ".tres")) == OK
+
+
+static func _delete_if_exists(path: String) -> void:
+	var abs_path := ProjectSettings.globalize_path(path)
+	if FileAccess.file_exists(abs_path):
+		DirAccess.remove_absolute(abs_path)

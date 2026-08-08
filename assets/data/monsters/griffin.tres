@@ -1,18 +1,18 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://crggshdssfve3"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_ybuf3"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_ybuf3"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_byxxa"]
 [ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_jgxce"]
 [ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="4_gelpi"]
 [ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="5_4gpae"]
 [ext_resource type="Resource" path="res://assets/data/moves/reckless_swing.tres" id="6_d7qd0"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="7_kho7k"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="7_kho7k"]
 
 [resource]
 script = ExtResource("7_kho7k")
 id = "griffin"
-display_name = "The Griffin"
-max_hp = 70
+display_name = "Fire Girl"
+max_hp = 60
 attack = 15
 defense = 7
 speed = 9

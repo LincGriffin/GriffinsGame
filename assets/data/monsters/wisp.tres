@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://dt6b1yusga0cp"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_axi55"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_axi55"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_dlrdf"]
 [ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_5i8s5"]
 [ext_resource type="Resource" path="res://assets/data/moves/evade.tres" id="4_o6rra"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_v6fh4"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_v6fh4"]
 
 [resource]
 script = ExtResource("5_v6fh4")

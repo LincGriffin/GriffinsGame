@@ -1,15 +1,15 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://83uaurvc3wy"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_y7mw3"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_y7mw3"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_mtfna"]
 [ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="3_dcckh"]
 [ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="4_mp6bq"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_8pnm8"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_8pnm8"]
 
 [resource]
 script = ExtResource("5_8pnm8")
 id = "myconid"
-display_name = "Myconid"
+display_name = "Winter Wolf"
 max_hp = 27
 attack = 6
 defense = 3
