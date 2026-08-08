@@ -36,7 +36,7 @@ func test_wild_encounters_are_unique_across_a_map() -> void:
 		var run := _new_run(s)
 		run._assign_encounters()
 		var ids := _ids_of(run, "battle")
-		var cap: int = run.WILD_ENEMIES.size()
+		var cap: int = run._wild_enemies.size()
 		# Every battle is a different monster, until the roster is genuinely exhausted.
 		eq(_unique(ids), mini(ids.size(), cap),
 			"seed %d: %d battles use %d distinct monsters (roster of %d)"
@@ -49,7 +49,7 @@ func test_elite_encounters_are_unique_across_a_map() -> void:
 		var run := _new_run(s)
 		run._assign_encounters()
 		var ids := _ids_of(run, "elite")
-		var cap: int = run.ELITE_ENEMIES.size()
+		var cap: int = run._elite_enemies.size()
 		eq(_unique(ids), mini(ids.size(), cap),
 			"seed %d: elites are distinct until the elite pool is spent" % s)
 		run.free()
@@ -60,9 +60,9 @@ func test_pick_wild_skips_already_used_monsters() -> void:
 	var used := {}
 	var picks: Array = []
 	# Draw as many as the roster holds — each must be new.
-	for i in run.WILD_ENEMIES.size():
+	for i in run._wild_enemies.size():
 		picks.append(String(run._pick_wild(0, used).id))
-	eq(_unique(picks), run.WILD_ENEMIES.size(),
+	eq(_unique(picks), run._wild_enemies.size(),
 		"drawing roster-size times yields every monster exactly once")
 	run.free()
 
@@ -70,7 +70,7 @@ func test_pick_wild_skips_already_used_monsters() -> void:
 func test_pick_wild_repeats_only_after_the_roster_is_exhausted() -> void:
 	var run := _new_run()
 	var used := {}
-	for i in run.WILD_ENEMIES.size():
+	for i in run._wild_enemies.size():
 		run._pick_wild(0, used)
 	# Roster spent — the next pick must still return a valid monster rather than null/erroring.
 	var extra = run._pick_wild(0, used)

@@ -14,6 +14,7 @@ const TABLE := {
 	"golem|spider": "griffin",    # heavy + many-legged -> a griffin
 	"chicken|rat": "goblin",      # vermin uprising -> a goblin
 	"bat|rat": "spider",          # scurrying swarm -> a giant spider
+	"griffin|griffin": "hydra",   # two griffins forged together -> the final-boss species itself
 }
 
 

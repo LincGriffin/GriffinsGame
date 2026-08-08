@@ -1,15 +1,15 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://cs0uahnlkv8qg"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_antv2"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_antv2"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_fjyxy"]
 [ext_resource type="Resource" path="res://assets/data/moves/shock.tres" id="3_rt3sl"]
 [ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_kip53"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_hglcs"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_hglcs"]
 
 [resource]
 script = ExtResource("5_hglcs")
 id = "imp"
-display_name = "Ember Imp"
+display_name = "Armored Chicken-Goblin"
 max_hp = 24
 attack = 8
 speed = 7

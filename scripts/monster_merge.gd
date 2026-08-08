@@ -23,26 +23,29 @@ const MAX_MOVES := 6
 
 
 static func fuse(a: Combatant, b: Combatant) -> Combatant:
-	var c := Combatant.from_monster(_identity(a, b))
+	var target_id := FUSION_TABLE.lookup(_id(a), _id(b))
+	var c := Combatant.from_monster(_identity(a, b, target_id))
 	c.max_hp = int(ceil(max(a.max_hp, b.max_hp) * HP_MULT))
 	c.hp = c.max_hp
 	c.attack = int(max(a.attack, b.attack)) + ATK_BONUS
 	c.defense = int(max(a.defense, b.defense)) + DEF_BONUS
 	c.speed = int(max(a.speed, b.speed))   # ignored for turn order, kept sane anyway
 	c.moves = _merged_moves(a, b)
-	c.is_fused = true                      # a fused monster can't itself be a merge partner later
+	# A FusionTable "identity" result is a real, whole monster (its own name/portrait) — not a
+	# dead-end blend — so it can be a fusion parent again later (e.g. chaining toward the Hydra
+	# recipe). Only a GENERIC "Fused <parent>" blend, which has no identity of its own, is final.
+	c.is_fused = target_id.is_empty()
 	return c
 
 
 ## The display name the fused result will have — used by the merge prompt's live preview.
 static func result_name(a: Combatant, b: Combatant) -> String:
-	return _identity(a, b).display_name
+	return _identity(a, b, FUSION_TABLE.lookup(_id(a), _id(b))).display_name
 
 
 ## The MonsterData the result borrows its identity (name / portrait / tint / source) from — a real
 ## roster monster for a table pair, else a synthetic in-memory "Fused" definition.
-static func _identity(a: Combatant, b: Combatant) -> MonsterData:
-	var target_id := FUSION_TABLE.lookup(_id(a), _id(b))
+static func _identity(a: Combatant, b: Combatant, target_id: String) -> MonsterData:
 	if not target_id.is_empty():
 		var md := load(MONSTERS_DIR + target_id + ".tres") as MonsterData
 		if md != null:

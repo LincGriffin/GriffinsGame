@@ -18,36 +18,12 @@ const ROSTER_HUD := preload("res://scripts/roster_hud.gd")
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
 const SAVE_MANAGER := preload("res://scripts/data/save_manager.gd")
 const SCREEN_TRANSITION := preload("res://scripts/screen_transition.gd")
+const MONSTER_REPO := preload("res://scripts/data/monster_repo.gd")
 
-# The wild pool spans difficulty tiers 0..3; the run draws depth-appropriate monsters
-# (see _pick_wild). Starters are the three tier-0 monsters.
-const WILD_ENEMIES: Array[MonsterData] = [
-	preload("res://assets/data/monsters/chicken.tres"),
-	preload("res://assets/data/monsters/slime.tres"),
-	preload("res://assets/data/monsters/bat.tres"),
-	preload("res://assets/data/monsters/rat.tres"),
-	preload("res://assets/data/monsters/skeleton.tres"),
-	preload("res://assets/data/monsters/kobold.tres"),
-	preload("res://assets/data/monsters/myconid.tres"),
-	preload("res://assets/data/monsters/wisp.tres"),
-	preload("res://assets/data/monsters/imp.tres"),
-	preload("res://assets/data/monsters/goblin.tres"),
-	preload("res://assets/data/monsters/spider.tres"),
-	preload("res://assets/data/monsters/cyclops.tres"),
-	preload("res://assets/data/monsters/golem.tres"),
-	preload("res://assets/data/monsters/wraith.tres"),
-]
-# The three weakest (tier 0) are offered as run-start starters.
-const STARTER_ENEMIES: Array[MonsterData] = [
-	preload("res://assets/data/monsters/chicken.tres"),
-	preload("res://assets/data/monsters/slime.tres"),
-	preload("res://assets/data/monsters/bat.tres"),
-]
-# Elite encounters — tougher fights that recruit a strong monster and heal the party.
-const ELITE_ENEMIES: Array[MonsterData] = [
-	preload("res://assets/data/monsters/gremlin_knob.tres"),
-	preload("res://assets/data/monsters/griffin.tres"),
-]
+# Wild and elite encounter pools are built dynamically from the on-disk roster — see
+# _build_wild_index() / _wild_enemies / _elite_enemies. The boss stays a single fixed
+# monster (not derived from is_boss, which would be ambiguous if more than one monster
+# ever carried that flag) since the run only ever has one final boss.
 const BOSS_ENEMY: MonsterData = preload("res://assets/data/monsters/hydra.tres")
 
 const MOVE_POOL: Array[MoveData] = [
@@ -81,6 +57,8 @@ var _settings_open := false         # the Settings overlay is up (Escape toggles
 var _transition: ScreenTransition = null   # plays the fade/screen transitions (see screen_transition.gd)
 var _wild_by_tier: Dictionary = {}  # tier:int -> Array[MonsterData]
 var _max_tier := 0
+var _wild_enemies: Array[MonsterData] = []    # every non-elite, non-boss monster (dynamic, see _build_wild_index)
+var _elite_enemies: Array[MonsterData] = []   # every is_elite monster (dynamic, see _build_wild_index)
 
 # Run tracking (scripts/data/run_history.gd) — recorded to user://run_history.json on win/loss.
 # Dev-facing for now (balance reference); the same log could back an in-game history screen later.
@@ -133,9 +111,21 @@ func _on_title_started() -> void:
 	await _fade_in()
 
 
+## Starters are every monster flagged is_starter in the roster — read live from disk (not a
+## hardcoded list) so toggling the flag via the Monsters dock changes who's offered here
+## immediately, with no code edit needed. Sorted by id (MonsterRepo.list_ids' order) for a
+## stable, predictable card order.
+func _starter_pool() -> Array[MonsterData]:
+	var out: Array[MonsterData] = []
+	for m in MONSTER_REPO.load_all():
+		if m.is_starter:
+			out.append(m)
+	return out
+
+
 func _show_starter_select() -> void:
 	var sel: StarterSelect = STARTER_SELECT.new()
-	sel.setup(STARTER_ENEMIES)
+	sel.setup(_starter_pool())
 	sel.chosen.connect(func(m):
 		_starter_id = String(m.id)
 		_gs.new_run(m)
@@ -535,11 +525,24 @@ func _shuffle(arr: Array) -> void:
 		arr[j] = tmp
 
 
-## Group the wild pool by difficulty tier so encounters can scale with map depth.
+## Reads the full roster live from disk (MonsterRepo, not a hardcoded list) and splits it into
+## the wild pool, the elite pool, and the wild pool grouped by tier — so a monster's tier or
+## is_elite flag actually determines whether/where it shows up, with no code edit needed (mirrors
+## _starter_pool()'s fix for is_starter). A monster flagged is_boss is reserved for BOSS_ENEMY and
+## excluded from both pools — encountering it as a random wild or elite fight would be a bug, not
+## a bonus.
 func _build_wild_index() -> void:
 	_wild_by_tier = {}
 	_max_tier = 0
-	for m in WILD_ENEMIES:
+	_wild_enemies.clear()
+	_elite_enemies.clear()
+	for m in MONSTER_REPO.load_all():
+		if m.is_boss:
+			continue
+		if m.is_elite:
+			_elite_enemies.append(m)
+			continue
+		_wild_enemies.append(m)
 		_max_tier = maxi(_max_tier, m.tier)
 		if not _wild_by_tier.has(m.tier):
 			_wild_by_tier[m.tier] = []
@@ -558,20 +561,25 @@ func _pick_wild(row: int, used: Dictionary = {}) -> MonsterData:
 		band -= 1
 	while band >= 0 and not _wild_by_tier.has(band):
 		band -= 1
-	var pool: Array = _wild_by_tier.get(maxi(band, 0), WILD_ENEMIES)
+	var pool: Array = _wild_by_tier.get(maxi(band, 0), _wild_enemies)
 	var pick = _pick_unused(pool, used)
 	if pick == null:
-		pick = _pick_unused(WILD_ENEMIES, used)   # this tier is spent — widen before repeating
+		pick = _pick_unused(_wild_enemies, used)   # this tier is spent — widen before repeating
 	if pick == null:
 		pick = pool[_rng.randi_range(0, pool.size() - 1)]   # whole roster spent → allow a repeat
 	used[String(pick.id)] = true
 	return pick
 
 
+## Unlike the wild pool, the elite pool can legitimately be EMPTY (the dock lets the user uncheck
+## Elite on every monster) — falls back to a tough wild pick rather than crashing on an empty-array
+## random index.
 func _pick_elite(used: Dictionary = {}) -> MonsterData:
-	var pick = _pick_unused(ELITE_ENEMIES, used)
+	if _elite_enemies.is_empty():
+		return _pick_wild(_max_tier, used)
+	var pick = _pick_unused(_elite_enemies, used)
 	if pick == null:
-		pick = ELITE_ENEMIES[_rng.randi_range(0, ELITE_ENEMIES.size() - 1)]
+		pick = _elite_enemies[_rng.randi_range(0, _elite_enemies.size() - 1)]
 	used[String(pick.id)] = true
 	return pick
 

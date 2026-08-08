@@ -64,10 +64,15 @@ func test_full_monster_roster_present() -> void:
 
 
 func test_starter_flags() -> void:
+	# Chicken deliberately opted OUT of is_starter via the dock (kept, not reverted) while
+	# staying tier-0 — the starter roster is data-driven (run.gd::_starter_pool()), not a fixed
+	# trio, so only slime/bat's flag is asserted here, not chicken's.
 	for id in ["chicken", "slime", "bat"]:
 		var m = load("res://assets/data/monsters/%s.tres" % id)
-		check(m.is_starter, "%s is a starter" % id)
 		eq(m.tier, 0, "%s is a tier-0 (weakest) monster" % id)
+	for id in ["slime", "bat"]:
+		var m = load("res://assets/data/monsters/%s.tres" % id)
+		check(m.is_starter, "%s is a starter" % id)
 	for id in ["skeleton", "griffin", "hydra"]:
 		var m = load("res://assets/data/monsters/%s.tres" % id)
 		check(not m.is_starter, "%s is not a starter" % id)
@@ -201,10 +206,13 @@ func test_unfused_living_excludes_fused_members() -> void:
 
 func test_serialize_restore_rebuilds_a_fused_monster() -> void:
 	# The hard case: a merged monster's MonsterData is generated at run time with NO file on disk,
-	# so restore must rebuild it from the saved fields rather than loading an id.
+	# so restore must rebuild it from the saved fields rather than loading an id. Uses slime+kobold —
+	# NOT a FusionTable pair — to actually exercise the generic (no on-disk source) fusion path;
+	# slime+bat is a table recipe (-> wraith) now that identity results stay unfused, so it would
+	# no longer be a generic/dead-end fusion.
 	var rs := _new_run_state()
 	rs.new_run(_slime())
-	rs.add_monster(load("res://assets/data/monsters/bat.tres"))
+	rs.add_monster(load("res://assets/data/monsters/kobold.tres"))
 	var fused = rs.merge(rs.party[0], rs.party[1])
 	eq(rs.party.size(), 1, "merge left a single fused monster")
 	var fused_name: String = fused.display_name

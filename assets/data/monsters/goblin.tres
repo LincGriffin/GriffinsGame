@@ -1,15 +1,15 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://b14njkrkbvab2"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_16r3u"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_16r3u"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_evttl"]
 [ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_45hf1"]
 [ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="4_8ulbv"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_nmhro"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_nmhro"]
 
 [resource]
 script = ExtResource("5_nmhro")
 id = "goblin"
-display_name = "Goblin"
+display_name = "Dolphin Shooter"
 max_hp = 35
 attack = 10
 defense = 4

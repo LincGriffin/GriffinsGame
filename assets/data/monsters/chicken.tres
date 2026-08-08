@@ -1,19 +1,18 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://vlfkm76s4thx"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_sxndg"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_sxndg"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_7j1wa"]
 [ext_resource type="Resource" path="res://assets/data/moves/focus.tres" id="3_tlqji"]
 [ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="4_e40pr"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_wuuiq"]
+[ext_resource type="Resource" uid="uid://dfyabmthktmbx" path="res://assets/data/moves/peck.tres" id="5_7j1wa"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_wuuiq"]
 
 [resource]
 script = ExtResource("5_wuuiq")
 id = "chicken"
-display_name = "Cluckling"
-max_hp = 13
-attack = 4
+display_name = "Road Runner"
+max_hp = 24
 defense = 1
 speed = 6
-is_starter = true
 tint = Color(0.95, 0.85, 0.35, 1)
-moves = Array[ExtResource("1_sxndg")]([ExtResource("2_7j1wa"), ExtResource("3_tlqji"), ExtResource("4_e40pr")])
+moves = Array[ExtResource("1_sxndg")]([ExtResource("2_7j1wa"), ExtResource("3_tlqji"), ExtResource("4_e40pr"), ExtResource("5_7j1wa")])

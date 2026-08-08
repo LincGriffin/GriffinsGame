@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://de2pxsoo3jgya"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_uvxxm"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_uvxxm"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_o2ijd"]
 [ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_e831d"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="4_mqmeg"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="4_mqmeg"]
 
 [resource]
 script = ExtResource("4_mqmeg")
 id = "slime"
-display_name = "Green Slime"
+display_name = "Moss Monkey"
 max_hp = 20
 speed = 3
 is_starter = true

@@ -1,16 +1,16 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://0kvbscdn1ohu"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_145q5"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_145q5"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_l4s6r"]
 [ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_ysyyi"]
 [ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="4_lt1f0"]
 [ext_resource type="Resource" path="res://assets/data/moves/reflect.tres" id="5_dgg1b"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="6_q14ix"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="6_q14ix"]
 
 [resource]
 script = ExtResource("6_q14ix")
 id = "skeleton"
-display_name = "Skeleton"
+display_name = "Old Tree Stump"
 max_hp = 28
 attack = 8
 defense = 4

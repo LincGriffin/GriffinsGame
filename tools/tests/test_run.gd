@@ -6,6 +6,7 @@ extends "res://tools/tests/_base.gd"
 ## _assign_encounters only touches _map and the wild/elite pools.
 
 const MAP_GENERATOR := preload("res://scripts/map/map_generator.gd")
+const MONSTER_REPO := preload("res://scripts/data/monster_repo.gd")
 
 
 func _new_run() -> Node:
@@ -24,6 +25,23 @@ func test_encounter_nodes_get_a_pre_rolled_enemy() -> void:
 			check(n.get("enemy") is MonsterData, "%s node %d gets a pre-rolled enemy" % [n["type"], n["id"]])
 		else:
 			check(not n.has("enemy"), "%s node %d has no enemy" % [n["type"], n["id"]])
+	run.free()
+
+
+## _starter_pool() must be DYNAMIC — every monster currently flagged is_starter on disk, not a
+## hardcoded list — so toggling the flag via the Monsters dock immediately changes who's offered
+## at run start. Checked against an independently-computed expectation (not a hardcoded id list
+## like "chicken, slime, bat") so this stays correct even as the roster's starters change.
+func test_starter_pool_is_every_is_starter_monster_on_disk() -> void:
+	var run := _new_run()
+	var expected: Array = []
+	for m in MONSTER_REPO.load_all():
+		if m.is_starter:
+			expected.append(String(m.id))
+	var actual: Array = []
+	for m in run._starter_pool():
+		actual.append(String(m.id))
+	eq(actual, expected, "the starter pool is exactly every is_starter monster on disk")
 	run.free()
 
 

@@ -1,15 +1,15 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://ckm4xk3mxn43c"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_tt3pr"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_tt3pr"]
 [ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="2_oqgps"]
 [ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="3_rrw0h"]
 [ext_resource type="Resource" path="res://assets/data/moves/reckless_swing.tres" id="4_ih4rm"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_a5eet"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_a5eet"]
 
 [resource]
 script = ExtResource("5_a5eet")
 id = "golem"
-display_name = "Stone Golem"
+display_name = "Mossy Rocks"
 max_hp = 58
 attack = 12
 defense = 8

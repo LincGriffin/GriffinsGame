@@ -1,15 +1,15 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://diie2hg0j1x0i"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_x4eig"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_x4eig"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_0rumj"]
 [ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_aquvq"]
 [ext_resource type="Resource" path="res://assets/data/moves/guard.tres" id="4_txku3"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="5_yjlxn"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="5_yjlxn"]
 
 [resource]
 script = ExtResource("5_yjlxn")
 id = "cyclops"
-display_name = "Cyclops"
+display_name = "Little Dwarf"
 max_hp = 40
 attack = 11
 defense = 5

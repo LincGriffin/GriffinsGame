@@ -130,9 +130,8 @@ func _build_ui() -> void:
 	_form.add_child(move_row)
 	_move_option = OptionButton.new()
 	_move_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for id in MOVE_REPO.list_ids():
-		_move_option.add_item(id)
 	move_row.add_child(_move_option)
+	_refresh_move_options()
 	var add_move_btn := Button.new()
 	add_move_btn.text = "Add"
 	add_move_btn.pressed.connect(_on_add_move_pressed)
@@ -259,6 +258,7 @@ func _load_monster(m: MonsterData) -> void:
 	_current_original_id = "" if m == null else String(m.id)
 	var enabled := m != null
 	_form.visible = enabled
+	_refresh_move_options()
 	if enabled:
 		_id_edit.text = m.id
 		_name_edit.text = m.display_name
@@ -282,6 +282,18 @@ func _refresh_moves_list() -> void:
 		return
 	for mv in _current.moves:
 		_moves_list.add_item(String(mv.id))
+
+
+## Repopulates the move dropdown from disk. Called at dock startup AND whenever a monster is
+## (re)loaded — otherwise a move created after the dock first opened (e.g. via the Move editor
+## dock earlier in the same session) never appears here, since the list was only ever built once.
+func _refresh_move_options() -> void:
+	var previous := _move_option.selected
+	_move_option.clear()
+	for id in MOVE_REPO.list_ids():
+		_move_option.add_item(id)
+	if _move_option.item_count > 0:
+		_move_option.select(clampi(previous, 0, _move_option.item_count - 1))
 
 
 func _on_new_pressed() -> void:
@@ -331,6 +343,7 @@ func _on_delete_confirmed() -> void:
 	var id := _current_original_id
 	if REPO.delete(id):
 		_status.text = "Deleted \"%s\"." % id
+		_clear_asset_caches()   # so a same-session recreate under the same id never sees stale art
 		_refresh_list()
 		_load_monster(null)
 	else:
@@ -338,7 +351,7 @@ func _on_delete_confirmed() -> void:
 
 
 func _on_add_move_pressed() -> void:
-	if _current == null or _move_option.item_count == 0:
+	if _current == null or _move_option.item_count == 0 or _move_option.selected < 0:
 		return
 	var id := _move_option.get_item_text(_move_option.selected)
 	for mv in _current.moves:
@@ -348,6 +361,11 @@ func _on_add_move_pressed() -> void:
 	var mv := MOVE_REPO.load_all().filter(func(m): return m.id == id)
 	if mv.is_empty():
 		return
+	# A never-saved-with-moves monster's `moves` can come back holding the script's shared
+	# read-only default Array (see MonsterRepo.load_one) — belt-and-suspenders check here too, in
+	# case _current was populated some other way.
+	if _current.moves.is_read_only():
+		_current.moves = _current.moves.duplicate()
 	_current.moves.append(mv[0])
 	_refresh_moves_list()
 

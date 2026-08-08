@@ -1,18 +1,18 @@
-[gd_resource type="Resource" script_class="MonsterData" format=3]
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://c74qc14f8trb2"]
 
-[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_547np"]
+[ext_resource type="Script" uid="uid://bmvrqimu3bcvy" path="res://scripts/data/move_data.gd" id="1_547np"]
 [ext_resource type="Resource" path="res://assets/data/moves/strike.tres" id="2_1jqkr"]
 [ext_resource type="Resource" path="res://assets/data/moves/heavy.tres" id="3_jyvwd"]
 [ext_resource type="Resource" path="res://assets/data/moves/slam.tres" id="4_hcafc"]
 [ext_resource type="Resource" path="res://assets/data/moves/drain.tres" id="5_j8eax"]
 [ext_resource type="Resource" path="res://assets/data/moves/mend.tres" id="6_gb6oe"]
 [ext_resource type="Resource" path="res://assets/data/moves/reckless_swing.tres" id="7_0pscg"]
-[ext_resource type="Script" path="res://scripts/data/monster_data.gd" id="8_tod2c"]
+[ext_resource type="Script" uid="uid://pra3g3px4dpf" path="res://scripts/data/monster_data.gd" id="8_tod2c"]
 
 [resource]
 script = ExtResource("8_tod2c")
 id = "hydra"
-display_name = "The Hydra"
+display_name = "5 Header"
 max_hp = 98
 attack = 16
 defense = 8

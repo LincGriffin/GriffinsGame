@@ -29,12 +29,12 @@ func _mk(id: String, hp: int, atk: int, def: int, spd: int, move_ids: Array, tie
 	return COMBATANT.from_monster(md)
 
 
-func test_fuse_marks_the_result_fused() -> void:
+func test_fuse_marks_a_generic_result_fused() -> void:
 	var a := _mk("aa", 20, 8, 3, 5, ["x"])
 	var b := _mk("bb", 14, 4, 6, 9, ["y"])
 	check(not a.is_fused and not b.is_fused, "fresh parents are not fused")
-	var f := MERGE.fuse(a, b)
-	check(f.is_fused, "the fused result is flagged is_fused (never an eligible partner again)")
+	var f := MERGE.fuse(a, b)   # "aa|bb" is not a table pair -> generic, a dead end
+	check(f.is_fused, "a generic fused result is flagged is_fused (never an eligible partner again)")
 
 
 func test_unfused_filter_excludes_fused() -> void:
@@ -97,6 +97,31 @@ func test_fusion_table_makes_a_specific_monster() -> void:
 	# Read the target's own display name rather than hardcoding it (it's editable via the dock).
 	var wraith := load("res://assets/data/monsters/wraith.tres") as MonsterData
 	eq(f.display_name, wraith.display_name, "the table result takes the target monster's name")
+	check(not f.is_fused, "a named identity result is a real monster, not a dead end — it can be fused again (e.g. toward a chained recipe)")
+
+
+func test_chained_identity_fusion() -> void:
+	# chicken+rat -> goblin (identity, unfused), then that goblin + a skeleton -> gremlin_knob.
+	# Chaining only works because the first result stayed eligible as a fusion parent.
+	var chicken := _mk("chicken", 10, 5, 2, 5, ["x"])
+	var rat := _mk("rat", 10, 5, 2, 5, ["y"])
+	var goblin := MERGE.fuse(chicken, rat)
+	eq(String(goblin.source.id), "goblin", "chicken+rat -> goblin")
+	check(not goblin.is_fused, "the goblin result is still eligible to fuse again")
+	var skeleton := _mk("skeleton", 10, 5, 2, 5, ["z"])
+	var knob := MERGE.fuse(goblin, skeleton)
+	eq(String(knob.source.id), "gremlin_knob", "the fused goblin can chain into goblin+skeleton -> gremlin_knob")
+
+
+func test_two_griffins_forge_a_hydra() -> void:
+	# griffin+griffin -> hydra is a same-id recipe pair — reachable in play because "griffin" has
+	# two independent sources (the wild elite encounter, and the golem+spider fusion recipe).
+	var a := _mk("griffin", 60, 15, 7, 9, ["x"])
+	var b := _mk("griffin", 60, 15, 7, 9, ["y"])
+	var f := MERGE.fuse(a, b)
+	eq(String(f.source.id), "hydra", "griffin+griffin -> hydra")
+	var hydra := load("res://assets/data/monsters/hydra.tres") as MonsterData
+	eq(f.display_name, hydra.display_name, "the table result takes the hydra's own name")
 
 
 func test_fusion_table_lookup_is_unordered() -> void:
