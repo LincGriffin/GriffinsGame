@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="FusionRecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/fusion_recipe_data.gd" id="1_lytws"]
+
+[resource]
+script = ExtResource("1_lytws")
+id = "goblin_skeleton"
+parent_a = "goblin"
+parent_b = "skeleton"
+result_id = "gremlin_knob"
