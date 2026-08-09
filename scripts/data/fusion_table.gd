@@ -1,27 +1,42 @@
 class_name FusionTable
 extends RefCounted
-## Special monster-merge results (Phase 6). MOST parent pairs fuse into a generic "Fused" blend
-## (see MonsterMerge); the pairs listed here instead become a specific, distinct monster — a
-## "whole new monster" from the player's point of view, with its own portrait/map sprite/name.
+## Special monster-merge results (Phase 6; data-driven via the Fusions dock as of later phase).
+## MOST parent pairs fuse into a generic "Fused" blend (see MonsterMerge); recipes registered here
+## instead become a specific, distinct monster — a "whole new monster" from the player's point of
+## view, with its own portrait/map sprite/name.
 ##
-## Keyed by the two parent monster ids joined with "|" in SORTED order, so order doesn't matter.
-## Values are the result monster's id (a real `assets/data/monsters/<id>.tres`). Edit freely to add
-## thematic recipes; an unlisted pair just falls through to the generic fusion.
+## Recipes live in `assets/data/fusions/*.tres` (FusionRecipeData), edited via the Fusions dock
+## (`addons/fusion_editor/`) or bootstrapped by `tools/gen_fusions.gd` — NOT hand-edited here.
+## Keyed by the two parent monster ids in SORTED order (FusionRepo.id_for), so pair order doesn't
+## matter; a pair CAN be the same id twice (e.g. `griffin_griffin`). An unlisted pair falls
+## through to the generic fusion. The index is memoised — call `clear_cache()` after adding/
+## editing/removing a recipe in the same process (the dock does this on Save/Delete; tests should
+## too, same convention as Portraits/MapSprites).
 
-const TABLE := {
-	"bat|slime": "wraith",        # ethereal drip -> a wraith
-	"goblin|skeleton": "gremlin_knob",  # cunning + bone -> the elite gremlin
-	"golem|spider": "griffin",    # heavy + many-legged -> a griffin
-	"chicken|rat": "goblin",      # vermin uprising -> a goblin
-	"bat|rat": "spider",          # scurrying swarm -> a giant spider
-	"griffin|griffin": "hydra",   # two griffins forged together -> the final-boss species itself
-}
+const FUSION_REPO := preload("res://scripts/data/fusion_repo.gd")
+
+static var _index: Dictionary = {}   # FusionRepo.id_for(a, b) -> result monster id
+static var _loaded := false
 
 
 ## The result monster id for a parent pair, or "" if the pair has no special recipe (→ generic).
 static func lookup(id_a: String, id_b: String) -> String:
 	if id_a.is_empty() or id_b.is_empty():
 		return ""
-	var pair := [id_a, id_b]
-	pair.sort()
-	return TABLE.get("%s|%s" % [pair[0], pair[1]], "")
+	_ensure_loaded()
+	return _index.get(FUSION_REPO.id_for(id_a, id_b), "")
+
+
+static func _ensure_loaded() -> void:
+	if _loaded:
+		return
+	_index.clear()
+	for r in FUSION_REPO.load_all():
+		_index[r.id] = r.result_id
+	_loaded = true
+
+
+## Forces the next lookup() to re-read every recipe from disk.
+static func clear_cache() -> void:
+	_loaded = false
+	_index.clear()

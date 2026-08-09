@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="FusionRecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/fusion_recipe_data.gd" id="1_xgptn"]
+
+[resource]
+script = ExtResource("1_xgptn")
+id = "bat_rat"
+parent_a = "bat"
+parent_b = "rat"
+result_id = "spider"
